@@ -6,27 +6,41 @@ import {
     normalize,
     dot,
     get_radians_diff,
+    intersect_line_with_circle,
+    get_square_dist_between_points,
 } from "./geometry.js";
+import { OBSERVATION_TAG, Observation } from "./observation.js";
 
 export class Guy {
     constructor(position) {
         this.size = 2.0;
         this.move_speed = 2.0;
-        this.rotation_speed = 0.5 * Math.PI;
+        this.rotation_speed = 2.0 * Math.PI;
         this.view_angle = Math.PI;
         this.view_dist = 20.0;
-        this.n_view_rays = 17;
+        this.n_view_rays = 21;
 
         this.position = position;
         this.orientation = 0.0; // Angle in radians
     }
 
-    draw(context, color) {
-        let rays = this.get_view_rays();
-        for (let ray of rays) {
-            draw_line(ray.start, ray.end, context, "rgb(60,60,60)");
+    draw(context, color, view_rays_color) {
+        if (view_rays_color != null) {
+            let rays = this.get_view_rays();
+            rays.map((r) =>
+                draw_line(r.start, r.end, context, view_rays_color)
+            );
         }
         draw_circle(this.position, this.size / 2.0, context, color);
+    }
+
+    collide_with_line(line) {
+        return intersect_line_with_circle(
+            line.start,
+            line.end,
+            this.position,
+            this.size / 2.0
+        );
     }
 
     get_view_rays() {
@@ -49,24 +63,47 @@ export class Guy {
         return rays;
     }
 
-    observe(objects) {
+    observe(obstacles, guys) {
         let view_rays = this.get_view_rays();
-        let collisions = [];
+        let observations = [];
+
+        let groups = [
+            { objects: obstacles, tag: OBSERVATION_TAG.OBSTACLE },
+            { objects: guys, tag: OBSERVATION_TAG.GUY },
+        ];
+
         for (let ray of view_rays) {
-            let ray_collisions = [];
-            for (let object of objects) {
-                let collision = object.collide_with_line(ray);
-                if (collision != null) {
-                    ray_collisions.push(collision);
+            let nearest_observation = null;
+            let nearest_dist = null;
+
+            for (let group of groups) {
+                for (let object of group.objects) {
+                    let position = object.collide_with_line(ray);
+                    if (position == null) {
+                        continue;
+                    }
+                    let dist = get_square_dist_between_points(
+                        ray.start,
+                        position
+                    );
+                    let observation = new Observation(group.tag, position);
+                    if (nearest_dist == null || dist < nearest_dist) {
+                        nearest_observation = observation;
+                        nearest_dist = dist;
+                    }
                 }
             }
-            let nearest_collision = get_nearest_point(
-                ray.start,
-                ray_collisions
-            );
-            collisions.push(nearest_collision);
+
+            if (nearest_observation != null) {
+                observations.push(nearest_observation);
+            } else {
+                observations.push(
+                    new Observation(OBSERVATION_TAG.NONE, null)
+                );
+            }
         }
-        return collisions;
+
+        return observations;
     }
 
     look_at(target, dt) {

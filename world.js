@@ -10,6 +10,7 @@ export const WORLD = {
 
     player: null,
     obstacles: null,
+    guys: null,
 };
 
 WORLD.update_time = () => {

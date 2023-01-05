@@ -66,6 +66,10 @@ export function intersect_line_with_rectangle(
 }
 
 export function intersect_line_with_circle(start, end, position, radius) {
+    let eps = 0.00001;
+    let is_horizontal = Math.abs(start[1] - end[1]) < eps;
+    let is_vertical = Math.abs(start[0] - end[0]) < eps;
+
     let cx = position[0];
     let cy = position[1];
     let r = radius;
@@ -74,7 +78,7 @@ export function intersect_line_with_circle(start, end, position, radius) {
     let x1;
     let y0;
     let y1;
-    if (end[0] == start[0]) {
+    if (is_vertical) {
         let x = end[0];
         let root = Math.sqrt(r * r - x * x + 2 * cx * x - cx * cx);
 
@@ -103,12 +107,30 @@ export function intersect_line_with_circle(start, end, position, radius) {
     }
 
     let intersections = [];
-    if (!isNaN(x0) && !isNaN(y0)) {
+    let kx0 = (x0 - start[0]) / (end[0] - start[0]);
+    let kx1 = (x1 - start[0]) / (end[0] - start[0]);
+    let ky0 = (y0 - start[1]) / (end[1] - start[1]);
+    let ky1 = (y1 - start[1]) / (end[1] - start[1]);
+    let kx0_is_valid = kx0 >= 0 && kx0 <= 1 && !isNaN(kx0);
+    let kx1_is_valid = kx1 >= 0 && kx1 <= 1 && !isNaN(kx1);
+    let ky0_is_valid = ky0 >= 0 && ky0 <= 1 && !isNaN(ky0);
+    let ky1_is_valid = ky1 >= 0 && ky1 <= 1 && !isNaN(ky1);
+    if (
+        (is_horizontal && kx0_is_valid) ||
+        (is_vertical && ky0_is_valid) ||
+        (kx0_is_valid && ky0_is_valid)
+    ) {
         intersections.push([x0, y0]);
     }
-    if (!isNaN(x1) && !isNaN(y1)) {
+
+    if (
+        (is_horizontal && kx1_is_valid) ||
+        (is_vertical && ky1_is_valid) ||
+        (kx1_is_valid && ky1_is_valid)
+    ) {
         intersections.push([x1, y1]);
     }
+
     return get_nearest_point(start, intersections);
 }
 

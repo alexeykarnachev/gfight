@@ -2,6 +2,7 @@ import { Line, Triangle, Rectangle, Circle } from "./primitives.js";
 import { Guy } from "./guy.js";
 import { draw_circle } from "./draw.js";
 import { WORLD, vec2_to_local } from "./world.js";
+import { OBSERVATION_TAG } from "./observation.js";
 
 const CANVAS = document.createElement("canvas");
 const CONTEXT = CANVAS.getContext("2d");
@@ -18,15 +19,21 @@ CANVAS.addEventListener("mousemove", (event) => {
 
 function main_loop() {
     CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
-    WORLD.player.draw(CONTEXT, "orange");
+
+    WORLD.player.draw(CONTEXT, "orange", "gray");
     for (let obstacle of WORLD.obstacles) {
         obstacle.draw(CONTEXT, "gray");
     }
+    for (let guy of WORLD.guys) {
+        guy.draw(CONTEXT, "pink");
+    }
 
-    let points = WORLD.player.observe(WORLD.obstacles);
-    for (let p of points) {
-        if (p != null) {
-            draw_circle(p, 0.1, CONTEXT, "red");
+    let observations = WORLD.player.observe(WORLD.obstacles, WORLD.guys);
+    for (let observation of observations) {
+        if (observation.tag == OBSERVATION_TAG.GUY) {
+            draw_circle(observation.position, 0.2, CONTEXT, "red");
+        } else if (observation.tag == OBSERVATION_TAG.OBSTACLE) {
+            draw_circle(observation.position, 0.2, CONTEXT, "white");
         }
     }
 
@@ -40,9 +47,11 @@ function main_loop() {
 
 function main() {
     WORLD.player = new Guy([10, 10]);
+    WORLD.guys = [new Guy([18, 18]), new Guy([15, 18]), new Guy([15, 5])];
     WORLD.obstacles = [
         new Rectangle([15, 14], 4, 2),
         new Circle([15, 10], 2),
+        new Circle([10, 15], 2),
         new Triangle([20, 1], [17, 2], [19, 10]),
     ];
 
