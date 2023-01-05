@@ -1,4 +1,4 @@
-const PIXELS_IN_METER = 20;
+import { num_to_world, vec2_to_world } from "./world.js";
 
 export function draw_line(start, end, context, color) {
     start = vec2_to_world(start);
@@ -41,12 +41,4 @@ export function draw_circle(position, radius, context, color) {
     context.beginPath();
     context.arc(position[0], position[1], radius, 0, 2 * Math.PI);
     context.fill();
-}
-
-function num_to_world(x) {
-    return x * PIXELS_IN_METER;
-}
-
-function vec2_to_world(v) {
-    return [v[0] * PIXELS_IN_METER, v[1] * PIXELS_IN_METER];
 }

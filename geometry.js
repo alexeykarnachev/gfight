@@ -147,3 +147,18 @@ export function rotate(point, center, angle) {
 
     return [x, y];
 }
+
+export function normalize(v) {
+    let length = Math.sqrt(v[0] * v[0] + v[1] * v[1]);
+    return [v[0] / length, v[1] / length];
+}
+
+export function dot(v1, v2) {
+    return v1[0] * v2[0] + v1[1] * v2[1];
+}
+
+export function get_radians_diff(a0, a1) {
+    let diff = Math.abs(a0 - a1);
+    diff = Math.min(diff, Math.abs(diff - 2 * Math.PI));
+    return diff;
+}

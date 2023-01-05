@@ -1,6 +1,12 @@
 import { draw_line, draw_circle } from "./draw.js";
 import { Line } from "./primitives.js";
-import { rotate, get_nearest_point } from "./geometry.js";
+import {
+    rotate,
+    get_nearest_point,
+    normalize,
+    dot,
+    get_radians_diff,
+} from "./geometry.js";
 
 export class Guy {
     constructor(position) {
@@ -61,5 +67,39 @@ export class Guy {
             collisions.push(nearest_collision);
         }
         return collisions;
+    }
+
+    look_at(target, dt) {
+        let target_view_dir = normalize([
+            target[0] - this.position[0],
+            target[1] - this.position[1],
+        ]);
+
+        let target_orientation = -Math.atan2(
+            target_view_dir[1],
+            target_view_dir[0]
+        );
+        let step = (this.rotation_speed * dt) / 1000.0;
+
+        let diff = get_radians_diff(target_orientation, this.orientation);
+        if (diff <= step) {
+            this.orientation = target_orientation;
+        } else {
+            let new_orientation0 = this.orientation + step;
+            let new_orientation1 = this.orientation - step;
+            let diff0 = get_radians_diff(
+                target_orientation,
+                new_orientation0
+            );
+            let diff1 = get_radians_diff(
+                target_orientation,
+                new_orientation1
+            );
+            if (diff0 < diff1) {
+                this.orientation = new_orientation0;
+            } else {
+                this.orientation = new_orientation1;
+            }
+        }
     }
 }
