@@ -17,6 +17,16 @@ CANVAS.addEventListener("mousemove", (event) => {
     WORLD.cursor_pos = [x, y];
 });
 
+window.addEventListener("keydown", (event) => {
+    console.log(WORLD.key_states);
+    WORLD.key_states[event.key] = 1;
+});
+
+window.addEventListener("keyup", (event) => {
+    console.log(WORLD.key_states);
+    WORLD.key_states[event.key] = 0;
+});
+
 function main_loop() {
     CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
 
@@ -39,6 +49,24 @@ function main_loop() {
 
     if (WORLD.cursor_pos != null) {
         WORLD.player.look_at(vec2_to_local(WORLD.cursor_pos), WORLD.dt);
+    }
+
+    let eps = 0.00001;
+    let move_dir = [0, 0];
+    if (WORLD.key_states["w"] == 1) {
+        move_dir[1] -= 1.0;
+    }
+    if (WORLD.key_states["s"] == 1) {
+        move_dir[1] += 1.0;
+    }
+    if (WORLD.key_states["a"] == 1) {
+        move_dir[0] -= 1.0;
+    }
+    if (WORLD.key_states["d"] == 1) {
+        move_dir[0] += 1.0;
+    }
+    if (Math.abs(move_dir[0]) > eps || Math.abs(move_dir[1]) > eps) {
+        WORLD.player.move(move_dir, WORLD.dt);
     }
 
     WORLD.update_time();

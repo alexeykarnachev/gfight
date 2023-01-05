@@ -16,6 +16,7 @@ export class Guy {
         this.size = 2.0;
         this.move_speed = 2.0;
         this.rotation_speed = 2.0 * Math.PI;
+        this.move_speed = 5.0;
         this.view_angle = Math.PI;
         this.view_dist = 20.0;
         this.n_view_rays = 21;
@@ -138,5 +139,13 @@ export class Guy {
                 this.orientation = new_orientation1;
             }
         }
+    }
+
+    move(dir, dt) {
+        dir = normalize(dir);
+        let step = (this.move_speed * dt) / 1000.0;
+        this.position[0] += dir[0] * step;
+        this.position[1] += dir[1] * step;
+        console.log(this.position);
     }
 }

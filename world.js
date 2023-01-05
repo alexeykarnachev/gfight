@@ -5,6 +5,8 @@ export const WORLD = {
 
     cursor_pos: null,
 
+    key_states: {},
+
     dt: 0,
     time: null,
 
