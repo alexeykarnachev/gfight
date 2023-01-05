@@ -30,6 +30,14 @@ class Line {
     }
 }
 
+class Triangle {
+    constructor(a, b, c) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+    }
+}
+
 class Rectangle {
     constructor(position, width, height) {
         this.position = position;
@@ -121,6 +129,19 @@ function draw_line(line, context, color) {
     context.stroke();
 }
 
+function draw_triangle(triangle, context, color) {
+    let a = vec2_to_world(triangle.a);
+    let b = vec2_to_world(triangle.b);
+    let c = vec2_to_world(triangle.c);
+
+    context.fillStyle = color;
+    context.beginPath();
+    context.moveTo(a[0], a[1]);
+    context.lineTo(b[0], b[1]);
+    context.lineTo(c[0], c[1]);
+    context.fill();
+}
+
 function draw_rect(rect, context, color) {
     let position = vec2_to_world(rect.position);
     let width = num_to_world(rect.width);
@@ -183,6 +204,20 @@ function intersect_lines(line0, line1) {
     } else {
         return null;
     }
+}
+
+function intersect_line_triangle(line, triangle) {
+    let a = triangle.a;
+    let b = triangle.b;
+    let c = triangle.c;
+
+    let intersections = [
+        intersect_lines(line, new Line(a, b)),
+        intersect_lines(line, new Line(b, c)),
+        intersect_lines(line, new Line(c, a)),
+    ];
+
+    return get_nearest_point(line.start, intersections);
 }
 
 function intersect_line_rect(line, rect) {
@@ -250,9 +285,11 @@ function main() {
     let player = new Guy([10, 10]);
     let obstacle_rect = new Rectangle([15, 14], 4, 2);
     let obstacle_circ = new Circle([15, 10], 2);
+    let obstacle_trng = new Triangle([20, 1], [17, 2], [19, 10]);
     draw_guy(player, CONTEXT, "orange");
     draw_rect(obstacle_rect, CONTEXT, "gray");
     draw_circle(obstacle_circ, CONTEXT, "gray");
+    draw_triangle(obstacle_trng, CONTEXT, "gray");
 
     let view_rays = get_guy_view_rays(player);
     for (let r of view_rays) {
@@ -262,6 +299,11 @@ function main() {
         }
 
         p = intersect_line_circle(r, obstacle_circ);
+        if (p != null) {
+            draw_circle(new Circle(p, 0.1), CONTEXT, "red");
+        }
+
+        p = intersect_line_triangle(r, obstacle_trng);
         if (p != null) {
             draw_circle(new Circle(p, 0.1), CONTEXT, "red");
         }
