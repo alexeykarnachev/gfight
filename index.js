@@ -2,7 +2,11 @@ import { Line, Triangle, Rectangle, Circle } from "./primitives.js";
 import { Guy } from "./guy.js";
 import { draw_circle } from "./draw.js";
 import { WORLD, vec2_to_local } from "./world.js";
-import { OBSERVATION_TAG } from "./observation.js";
+import { COLLISION_TAG } from "./collision.js";
+import {
+    intersect_circles,
+    intersect_line_with_circle,
+} from "./geometry.js";
 
 const CANVAS = document.createElement("canvas");
 const CONTEXT = CANVAS.getContext("2d");
@@ -18,12 +22,10 @@ CANVAS.addEventListener("mousemove", (event) => {
 });
 
 window.addEventListener("keydown", (event) => {
-    console.log(WORLD.key_states);
     WORLD.key_states[event.key] = 1;
 });
 
 window.addEventListener("keyup", (event) => {
-    console.log(WORLD.key_states);
     WORLD.key_states[event.key] = 0;
 });
 
@@ -40,10 +42,16 @@ function main_loop() {
 
     let observations = WORLD.player.observe(WORLD.obstacles, WORLD.guys);
     for (let observation of observations) {
-        if (observation.tag == OBSERVATION_TAG.GUY) {
-            draw_circle(observation.position, 0.2, CONTEXT, "red");
-        } else if (observation.tag == OBSERVATION_TAG.OBSTACLE) {
-            draw_circle(observation.position, 0.2, CONTEXT, "white");
+        for (let position of observation.positions) {
+            draw_circle(position, 0.2, CONTEXT, "white");
+        }
+    }
+
+    let collisions = WORLD.player.collide(WORLD.obstacles, WORLD.guys);
+    for (let collision of collisions) {
+        for (let position of collision.positions) {
+            draw_circle(position, 0.2, CONTEXT, "red");
+            console.log(position);
         }
     }
 

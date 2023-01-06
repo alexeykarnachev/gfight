@@ -1,3 +1,5 @@
+const EPS = 0.00001;
+
 export function intersect_lines(start0, end0, start1, end1) {
     let a = start0[0];
     let b = end0[0];
@@ -27,9 +29,9 @@ export function intersect_lines(start0, end0, start1, end1) {
         y <= Math.max(e, f) &&
         y <= Math.max(h, g)
     ) {
-        return [x, y];
+        return [[x, y]];
     } else {
-        return null;
+        return [];
     }
 }
 
@@ -38,9 +40,9 @@ export function intersect_line_with_triangle(start, end, a, b, c) {
         intersect_lines(start, end, a, b),
         intersect_lines(start, end, b, c),
         intersect_lines(start, end, c, a),
-    ];
+    ].flat(1);
 
-    return get_nearest_point(start, intersections);
+    return intersections;
 }
 
 export function intersect_line_with_rectangle(
@@ -60,15 +62,14 @@ export function intersect_line_with_rectangle(
         intersect_lines(start, end, b, c),
         intersect_lines(start, end, c, d),
         intersect_lines(start, end, d, a),
-    ];
+    ].flat(1);
 
-    return get_nearest_point(start, intersections);
+    return intersections;
 }
 
 export function intersect_line_with_circle(start, end, position, radius) {
-    let eps = 0.00001;
-    let is_horizontal = Math.abs(start[1] - end[1]) < eps;
-    let is_vertical = Math.abs(start[0] - end[0]) < eps;
+    let is_horizontal = Math.abs(start[1] - end[1]) < EPS;
+    let is_vertical = Math.abs(start[0] - end[0]) < EPS;
 
     let cx = position[0];
     let cy = position[1];
@@ -131,7 +132,58 @@ export function intersect_line_with_circle(start, end, position, radius) {
         intersections.push([x1, y1]);
     }
 
-    return get_nearest_point(start, intersections);
+    return intersections;
+}
+
+export function intersect_circles(position0, radius0, position1, radius1) {
+    let r0 = radius0;
+    let r1 = radius1;
+    let rotated = false;
+
+    if (position0[0] == position1[0]) {
+        rotated = true;
+        position1 = rotate(position1, position0, -Math.PI * 0.5);
+    }
+    let x0 = position0[0];
+    let y0 = position0[1];
+    let x1 = position1[0];
+    let y1 = position1[1];
+
+    let A = x0 * x0 + y0 * y0 - r0 * r0 - x1 * x1 - y1 * y1 + r1 * r1;
+    let B = 2 * x1 - 2 * x0;
+    let C = 2 * y1 - 2 * y0;
+    let D = -1 / B;
+    let E = C * D;
+    let F = A * D;
+    let G = x0 * x0 + y0 * y0 - r0 * r0;
+
+    let a = E * E + 1;
+    let b = 2 * E * F - 2 * x0 * E - 2 * y0;
+    let c = F * F - 2 * x0 * F + G;
+    let d = b * b - 4 * a * c;
+
+    let intersections = [];
+    if (Math.abs(d) < EPS) {
+        let y = (-b / 2) * a;
+        let x = (-y * C - A) / B;
+        intersections.push([x, y]);
+    } else if (d > 0) {
+        let root = Math.sqrt(d);
+        let y_0 = (-b + root) / (2 * a);
+        let y_1 = (-b - root) / (2 * a);
+        let x_0 = (-y_0 * C - A) / B;
+        let x_1 = (-y_1 * C - A) / B;
+        intersections.push([x_0, y_0]);
+        intersections.push([x_1, y_1]);
+    }
+
+    if (rotated) {
+        intersections = intersections.map((p) =>
+            rotate(p, position0, Math.PI * 0.5)
+        );
+    }
+
+    return intersections;
 }
 
 export function get_square_dist_between_points(p0, p1) {

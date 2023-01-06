@@ -1,5 +1,6 @@
 import {
     intersect_lines,
+    intersect_circles,
     intersect_line_with_triangle,
     intersect_line_with_rectangle,
     intersect_line_with_circle,
@@ -22,37 +23,45 @@ export class Line {
     }
 
     collide_with_line(line) {
-        return intersect_lines(this.start, this.end, line.start, line.end);
+        let intersections = intersect_lines(
+            this.start,
+            this.end,
+            line.start,
+            line.end
+        );
+        return intersections;
     }
 
     collide_with_triangle(triangle) {
-        let foo = intersect_line_with_triangle(
+        let intersections = intersect_line_with_triangle(
             this.start,
             this.end,
             triangle.a,
             triangle.b,
             triangle.c
         );
-        return foo;
+        return intersections;
     }
 
     collide_with_rectangle(rectangle) {
-        return intersect_line_with_rectangle(
+        let intersections = intersect_line_with_rectangle(
             this.start,
             this.end,
             rectangle.position,
             rectangle.width,
             rectangle.height
         );
+        return intersections;
     }
 
     collide_with_circle(circle) {
-        return intersect_line_with_circle(
+        let intersections = intersect_line_with_circle(
             this.start,
             this.end,
             circle.position,
             circle.radius
         );
+        return intersections;
     }
 }
 
@@ -106,5 +115,14 @@ export class Circle {
 
     collide_with_line(line) {
         return line.collide_with_circle(this);
+    }
+
+    collide_with_circle(circle) {
+        return intersect_circles(
+            this.position,
+            this.radius,
+            circle.position,
+            circle.radius
+        );
     }
 }

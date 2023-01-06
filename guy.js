@@ -1,15 +1,15 @@
 import { draw_line, draw_circle } from "./draw.js";
-import { Line } from "./primitives.js";
+import { Line, Circle } from "./primitives.js";
 import {
     rotate,
     get_nearest_point,
     normalize,
-    dot,
     get_radians_diff,
     intersect_line_with_circle,
     get_square_dist_between_points,
+    intersect_circles,
 } from "./geometry.js";
-import { OBSERVATION_TAG, Observation } from "./observation.js";
+import { COLLISION_TAG, Collision } from "./collision.js";
 
 export class Guy {
     constructor(position) {
@@ -35,13 +35,8 @@ export class Guy {
         draw_circle(this.position, this.size / 2.0, context, color);
     }
 
-    collide_with_line(line) {
-        return intersect_line_with_circle(
-            line.start,
-            line.end,
-            this.position,
-            this.size / 2.0
-        );
+    get_circle() {
+        return new Circle(this.position, this.size / 2.0);
     }
 
     get_view_rays() {
@@ -64,13 +59,31 @@ export class Guy {
         return rays;
     }
 
+    collide_with_line(line) {
+        return intersect_line_with_circle(
+            line.start,
+            line.end,
+            this.position,
+            this.size / 2.0
+        );
+    }
+
+    collide_with_circle(circle) {
+        return intersect_circles(
+            this.position,
+            this.size / 2.0,
+            circle.position,
+            circle.radius
+        );
+    }
+
     observe(obstacles, guys) {
         let view_rays = this.get_view_rays();
         let observations = [];
 
         let groups = [
-            { objects: obstacles, tag: OBSERVATION_TAG.OBSTACLE },
-            { objects: guys, tag: OBSERVATION_TAG.GUY },
+            { objects: obstacles, tag: COLLISION_TAG.OBSTACLE_OBSERVE },
+            { objects: guys, tag: COLLISION_TAG.GUY_OBSERVE },
         ];
 
         for (let ray of view_rays) {
@@ -79,7 +92,10 @@ export class Guy {
 
             for (let group of groups) {
                 for (let object of group.objects) {
-                    let position = object.collide_with_line(ray);
+                    let position = get_nearest_point(
+                        ray.start,
+                        object.collide_with_line(ray)
+                    );
                     if (position == null) {
                         continue;
                     }
@@ -87,7 +103,7 @@ export class Guy {
                         ray.start,
                         position
                     );
-                    let observation = new Observation(group.tag, position);
+                    let observation = new Collision(group.tag, [position]);
                     if (nearest_dist == null || dist < nearest_dist) {
                         nearest_observation = observation;
                         nearest_dist = dist;
@@ -98,13 +114,36 @@ export class Guy {
             if (nearest_observation != null) {
                 observations.push(nearest_observation);
             } else {
-                observations.push(
-                    new Observation(OBSERVATION_TAG.NONE, null)
-                );
+                observations.push(new Collision(COLLISION_TAG.NONE, []));
             }
         }
 
         return observations;
+    }
+
+    collide(obstacles, guys) {
+        let groups = [
+            { objects: obstacles, tag: COLLISION_TAG.OBSTACLE_COLLIDE },
+            { objects: guys, tag: COLLISION_TAG.GUY_COLLIDE },
+        ];
+
+        let collisions = [];
+        for (let group of groups) {
+            for (let object of group.objects) {
+                if (object.collide_with_circle != null) {
+                    let positions = object.collide_with_circle(
+                        this.get_circle()
+                    );
+                    if (positions.length > 0) {
+                        collisions.push(
+                            new Collision(group.tag, positions)
+                        );
+                    }
+                }
+            }
+        }
+
+        return collisions;
     }
 
     look_at(target, dt) {
@@ -146,6 +185,5 @@ export class Guy {
         let step = (this.move_speed * dt) / 1000.0;
         this.position[0] += dir[0] * step;
         this.position[1] += dir[1] * step;
-        console.log(this.position);
     }
 }
