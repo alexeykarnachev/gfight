@@ -186,6 +186,36 @@ export function intersect_circles(position0, radius0, position1, radius1) {
     return intersections;
 }
 
+export function intersect_triangle_with_circle(a, b, c, position, radius) {
+    let intersections = [
+        ...intersect_line_with_circle(a, b, position, radius),
+        ...intersect_line_with_circle(b, c, position, radius),
+        ...intersect_line_with_circle(c, a, position, radius),
+    ];
+    return intersections;
+}
+
+export function intersect_rectangle_with_circle(
+    rectangle_position,
+    width,
+    height,
+    circle_position,
+    radius
+) {
+    let a = rectangle_position;
+    let b = [a[0] + width, a[1]];
+    let c = [b[0], a[1] + height];
+    let d = [a[0], c[1]];
+
+    let intersections = [
+        ...intersect_line_with_circle(a, b, circle_position, radius),
+        ...intersect_line_with_circle(b, c, circle_position, radius),
+        ...intersect_line_with_circle(c, d, circle_position, radius),
+        ...intersect_line_with_circle(d, a, circle_position, radius),
+    ];
+    return intersections;
+}
+
 export function get_square_dist_between_points(p0, p1) {
     let xd = p1[0] - p0[0];
     let yd = p1[1] - p0[1];

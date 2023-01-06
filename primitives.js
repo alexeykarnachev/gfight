@@ -4,6 +4,8 @@ import {
     intersect_line_with_triangle,
     intersect_line_with_rectangle,
     intersect_line_with_circle,
+    intersect_triangle_with_circle,
+    intersect_rectangle_with_circle,
 } from "./geometry.js";
 import {
     draw_line,
@@ -77,7 +79,25 @@ export class Triangle {
     }
 
     collide_with_line(line) {
-        return line.collide_with_triangle(this);
+        let intersections = intersect_line_with_triangle(
+            line.start,
+            line.end,
+            this.a,
+            this.b,
+            this.c
+        );
+        return intersections;
+    }
+
+    collide_with_circle(circle) {
+        let intersections = intersect_triangle_with_circle(
+            this.a,
+            this.b,
+            this.c,
+            circle.position,
+            circle.radius
+        );
+        return intersections;
     }
 }
 
@@ -99,7 +119,25 @@ export class Rectangle {
     }
 
     collide_with_line(line) {
-        return line.collide_with_rectangle(this);
+        let intersections = intersect_line_with_rectangle(
+            line.start,
+            line.end,
+            this.position,
+            this.width,
+            this.height
+        );
+        return intersections;
+    }
+
+    collide_with_circle(circle) {
+        let intersections = intersect_rectangle_with_circle(
+            this.position,
+            this.width,
+            this.height,
+            circle.position,
+            circle.radius
+        );
+        return intersections;
     }
 }
 
@@ -114,7 +152,35 @@ export class Circle {
     }
 
     collide_with_line(line) {
-        return line.collide_with_circle(this);
+        let intersections = intersect_line_with_circle(
+            line.start,
+            line.end,
+            this.position,
+            this.radius
+        );
+        return intersections;
+    }
+
+    collide_width_triangle(triangle) {
+        let intersections = intersect_triangle_with_circle(
+            triangle.a,
+            triangle.b,
+            triangle.c,
+            this.position,
+            this.radius
+        );
+        return intersections;
+    }
+
+    collide_width_rectangle(rectangle) {
+        let intersections = intersect_rectangle_with_circle(
+            rectangle.position,
+            rectangle.width,
+            rectangle.height,
+            this.position,
+            this.radius
+        );
+        return intersections;
     }
 
     collide_with_circle(circle) {

@@ -3,10 +3,6 @@ import { Guy } from "./guy.js";
 import { draw_circle } from "./draw.js";
 import { WORLD, vec2_to_local } from "./world.js";
 import { COLLISION_TAG } from "./collision.js";
-import {
-    intersect_circles,
-    intersect_line_with_circle,
-} from "./geometry.js";
 
 const CANVAS = document.createElement("canvas");
 const CONTEXT = CANVAS.getContext("2d");
@@ -51,7 +47,6 @@ function main_loop() {
     for (let collision of collisions) {
         for (let position of collision.positions) {
             draw_circle(position, 0.2, CONTEXT, "red");
-            console.log(position);
         }
     }
 
