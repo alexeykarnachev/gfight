@@ -266,3 +266,89 @@ export function get_radians_diff(a0, a1) {
     diff = Math.min(diff, Math.abs(diff - 2 * Math.PI));
     return diff;
 }
+
+export function get_line_normal_at(start, end, position) {
+    let kx = (position[0] - start[0]) / (end[0] - start[0]);
+    let ky = (position[1] - start[1]) / (end[1] - start[1]);
+    let kx_is_good = kx <= 1.0 && kx >= 0.0;
+    let ky_is_good = ky <= 1.0 && ky >= 0.0;
+    console.log(start[0], end[0]);
+    if (
+        Math.abs(end[0] - start[0]) < EPS &&
+        Math.abs(position[0] - start[0]) < EPS &&
+        ky_is_good
+    ) {
+        return start[1] < end[1] ? [1, 0] : [-1, 0];
+    } else if (
+        Math.abs(end[1] - start[1]) < EPS &&
+        Math.abs(position[1] - start[1]) < EPS &&
+        kx_is_good
+    ) {
+        return start[0] < end[0] ? [0, -1] : [0, 1];
+    } else if (Math.abs(kx - ky) < EPS && kx_is_good && ky_is_good) {
+        return normalize([start[1] - end[1], end[0] - start[0]]);
+    } else {
+        return null;
+    }
+}
+
+export function get_triangle_normal_at(a, b, c, position) {
+    let normal = null;
+    for (let line of [
+        [a, b],
+        [b, c],
+        [c, a],
+    ]) {
+        normal = get_line_normal_at(line[0], line[1], position);
+        if (normal != null) {
+            return normal;
+        }
+    }
+    return normal;
+}
+
+export function get_rectangle_normal_at(
+    rectangle_position,
+    width,
+    height,
+    point_position
+) {
+    let a = rectangle_position;
+    let b = [a[0] + width, a[1]];
+    let c = [b[0], a[1] + height];
+    let d = [a[0], c[1]];
+
+    let normal = null;
+    for (let line of [
+        [a, b],
+        [b, c],
+        [c, d],
+        [d, a],
+    ]) {
+        normal = get_line_normal_at(line[0], line[1], point_position);
+        if (normal != null) {
+            return normal;
+        }
+    }
+    return normal;
+}
+
+export function get_circle_normal_at(
+    circle_position,
+    radius,
+    point_position
+) {
+    let x0 = circle_position[0];
+    let y0 = circle_position[1];
+    let x = point_position[0];
+    let y = point_position[1];
+    let r = radius;
+    if (
+        Math.abs((x0 - x) * (x0 - x) + (y0 - y) * (y0 - y) - r * r) < EPS
+    ) {
+        let vec = [point_position[0] - x0, point_position[1] - y0];
+        return normalize(vec);
+    } else {
+        return null;
+    }
+}

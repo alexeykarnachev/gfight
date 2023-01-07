@@ -8,8 +8,15 @@ import {
     intersect_line_with_circle,
     get_square_dist_between_points,
     intersect_circles,
+    get_circle_normal_at,
 } from "./geometry.js";
-import { COLLISION_TAG, Collision } from "./collision.js";
+import {
+    COLLISION_TAG,
+    Collision,
+    collide_primitive_with_world,
+    observe_world,
+} from "./collision.js";
+import { WORLD } from "./world.js";
 
 export class Guy {
     constructor(position) {
@@ -77,76 +84,28 @@ export class Guy {
         );
     }
 
-    observe(obstacles, guys) {
-        let view_rays = this.get_view_rays();
-        let observations = [];
-
-        let groups = [
-            { objects: obstacles, tag: COLLISION_TAG.OBSTACLE_OBSERVE },
-            { objects: guys, tag: COLLISION_TAG.GUY_OBSERVE },
-        ];
-
-        for (let ray of view_rays) {
-            let nearest_observation = null;
-            let nearest_dist = null;
-
-            for (let group of groups) {
-                for (let object of group.objects) {
-                    let position = get_nearest_point(
-                        ray.start,
-                        object.collide_with_line(ray)
-                    );
-                    if (position == null) {
-                        continue;
-                    }
-                    let dist = get_square_dist_between_points(
-                        ray.start,
-                        position
-                    );
-                    let observation = new Collision(group.tag, [position]);
-                    if (nearest_dist == null || dist < nearest_dist) {
-                        nearest_observation = observation;
-                        nearest_dist = dist;
-                    }
-                }
-            }
-
-            if (nearest_observation != null) {
-                observations.push(nearest_observation);
-            } else {
-                observations.push(new Collision(COLLISION_TAG.NONE, []));
-            }
-        }
-
-        return observations;
+    rotate(direction) {
+        let step = (this.rotation_speed * WORLD.dt) / 1000.0;
+        this.orientation += direction * step;
     }
 
-    collide(obstacles, guys) {
-        let groups = [
-            { objects: obstacles, tag: COLLISION_TAG.OBSTACLE_COLLIDE },
-            { objects: guys, tag: COLLISION_TAG.GUY_COLLIDE },
+    step(direction) {
+        let step = (this.move_speed * WORLD.dt) / 1000.0;
+        let x_step = Math.cos(this.orientation + direction) * step;
+        let y_step = -Math.sin(this.orientation + direction) * step;
+        let new_position = [
+            this.position[0] + x_step,
+            this.position[1] + y_step,
         ];
-
-        let collisions = [];
-        for (let group of groups) {
-            for (let object of group.objects) {
-                if (object.collide_with_circle != null) {
-                    let positions = object.collide_with_circle(
-                        this.get_circle()
-                    );
-                    if (positions.length > 0) {
-                        collisions.push(
-                            new Collision(group.tag, positions)
-                        );
-                    }
-                }
-            }
-        }
-
-        return collisions;
+        let circle = new Circle(new_position, this.size / 2.0);
+        let collisions = collide_primitive_with_world(circle);
+        // if (collisions.length == 0) {
+        this.position[0] += x_step;
+        this.position[1] += y_step;
+        // }
     }
 
-    look_at(target, dt) {
+    look_at(target) {
         let target_view_dir = normalize([
             target[0] - this.position[0],
             target[1] - this.position[1],
@@ -156,7 +115,7 @@ export class Guy {
             target_view_dir[1],
             target_view_dir[0]
         );
-        let step = (this.rotation_speed * dt) / 1000.0;
+        let step = (this.rotation_speed * WORLD.dt) / 1000.0;
 
         let diff = get_radians_diff(target_orientation, this.orientation);
         if (diff <= step) {
@@ -180,10 +139,23 @@ export class Guy {
         }
     }
 
-    move(dir, dt) {
-        dir = normalize(dir);
-        let step = (this.move_speed * dt) / 1000.0;
-        this.position[0] += dir[0] * step;
-        this.position[1] += dir[1] * step;
+    get_normal_at(position) {
+        return get_circle_normal_at(
+            this.position,
+            this.size / 2.0,
+            position
+        );
     }
 }
+
+export const STEP_DIRECTION = {
+    FORWARD: 0.0,
+    RIGHT: -0.5 * Math.PI,
+    LEFT: 0.5 * Math.PI,
+    BACK: Math.PI,
+};
+
+export const ROTATION_DIRECTION = {
+    LEFT: 1.0,
+    RIGHT: -1.0,
+};

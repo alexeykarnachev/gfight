@@ -1,4 +1,5 @@
 import {
+    normalize,
     intersect_lines,
     intersect_circles,
     intersect_line_with_triangle,
@@ -6,6 +7,10 @@ import {
     intersect_line_with_circle,
     intersect_triangle_with_circle,
     intersect_rectangle_with_circle,
+    get_line_normal_at,
+    get_triangle_normal_at,
+    get_rectangle_normal_at,
+    get_circle_normal_at,
 } from "./geometry.js";
 import {
     draw_line,
@@ -65,6 +70,10 @@ export class Line {
         );
         return intersections;
     }
+
+    get_normal_at(position) {
+        return get_line_normal_at(this.start, this.end, position);
+    }
 }
 
 export class Triangle {
@@ -98,6 +107,10 @@ export class Triangle {
             circle.radius
         );
         return intersections;
+    }
+
+    get_normal_at(position) {
+        return get_triangle_normal_at(this.a, this.b, this.c, position);
     }
 }
 
@@ -138,6 +151,15 @@ export class Rectangle {
             circle.radius
         );
         return intersections;
+    }
+
+    get_normal_at(position) {
+        return get_rectangle_normal_at(
+            this.position,
+            this.width,
+            this.height,
+            position
+        );
     }
 }
 
@@ -184,11 +206,16 @@ export class Circle {
     }
 
     collide_with_circle(circle) {
-        return intersect_circles(
+        let intersections = intersect_circles(
             this.position,
             this.radius,
             circle.position,
             circle.radius
         );
+        return intersections;
+    }
+
+    get_normal_at(position) {
+        return get_circle_normal_at(this.position, this.radius, position);
     }
 }

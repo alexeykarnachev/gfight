@@ -1,8 +1,12 @@
 import { Line, Triangle, Rectangle, Circle } from "./primitives.js";
-import { Guy } from "./guy.js";
-import { draw_circle } from "./draw.js";
+import { Guy, STEP_DIRECTION, ROTATION_DIRECTION } from "./guy.js";
+import { draw_circle, draw_line } from "./draw.js";
 import { WORLD, vec2_to_local } from "./world.js";
-import { COLLISION_TAG } from "./collision.js";
+import {
+    COLLISION_TAG,
+    collide_primitive_with_world,
+    observe_world,
+} from "./collision.js";
 
 const CANVAS = document.createElement("canvas");
 const CONTEXT = CANVAS.getContext("2d");
@@ -36,17 +40,26 @@ function main_loop() {
         guy.draw(CONTEXT, "pink");
     }
 
-    let observations = WORLD.player.observe(WORLD.obstacles, WORLD.guys);
+    let observations = observe_world(WORLD.player.get_view_rays());
     for (let observation of observations) {
         for (let position of observation.positions) {
             draw_circle(position, 0.2, CONTEXT, "white");
         }
     }
 
-    let collisions = WORLD.player.collide(WORLD.obstacles, WORLD.guys);
+    let collisions = collide_primitive_with_world(
+        WORLD.player.get_circle(),
+        WORLD
+    );
     for (let collision of collisions) {
-        for (let position of collision.positions) {
+        for (let i = 0; i < collision.positions.length; ++i) {
+            let position = collision.positions[i];
+            let normal = collision.normals[i];
+            let end = [position[0] + normal[0], position[1] + normal[1]];
             draw_circle(position, 0.2, CONTEXT, "red");
+            draw_line(position, end, CONTEXT, "red");
+        }
+        for (let normal of collision.normals) {
         }
     }
 
@@ -54,22 +67,18 @@ function main_loop() {
         WORLD.player.look_at(vec2_to_local(WORLD.cursor_pos), WORLD.dt);
     }
 
-    let eps = 0.00001;
-    let move_dir = [0, 0];
     if (WORLD.key_states["w"] == 1) {
-        move_dir[1] -= 1.0;
-    }
-    if (WORLD.key_states["s"] == 1) {
-        move_dir[1] += 1.0;
-    }
-    if (WORLD.key_states["a"] == 1) {
-        move_dir[0] -= 1.0;
-    }
-    if (WORLD.key_states["d"] == 1) {
-        move_dir[0] += 1.0;
-    }
-    if (Math.abs(move_dir[0]) > eps || Math.abs(move_dir[1]) > eps) {
-        WORLD.player.move(move_dir, WORLD.dt);
+        WORLD.player.step(STEP_DIRECTION.FORWARD);
+    } else if (WORLD.key_states["s"] == 1) {
+        WORLD.player.step(STEP_DIRECTION.BACK);
+    } else if (WORLD.key_states["d"] == 1) {
+        WORLD.player.step(STEP_DIRECTION.RIGHT);
+    } else if (WORLD.key_states["a"] == 1) {
+        WORLD.player.step(STEP_DIRECTION.LEFT);
+    } else if (WORLD.key_states["ArrowLeft"] == 1) {
+        WORLD.player.rotate(ROTATION_DIRECTION.LEFT);
+    } else if (WORLD.key_states["ArrowRight"] == 1) {
+        WORLD.player.rotate(ROTATION_DIRECTION.RIGHT);
     }
 
     WORLD.update_time();
