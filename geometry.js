@@ -1,4 +1,4 @@
-const EPS = 0.00001;
+import { WORLD } from "./world.js";
 
 export function intersect_lines(start0, end0, start1, end1) {
     let a = start0[0];
@@ -68,8 +68,8 @@ export function intersect_line_with_rectangle(
 }
 
 export function intersect_line_with_circle(start, end, position, radius) {
-    let is_horizontal = Math.abs(start[1] - end[1]) < EPS;
-    let is_vertical = Math.abs(start[0] - end[0]) < EPS;
+    let is_horizontal = Math.abs(start[1] - end[1]) < WORLD.eps;
+    let is_vertical = Math.abs(start[0] - end[0]) < WORLD.eps;
 
     let cx = position[0];
     let cy = position[1];
@@ -140,7 +140,7 @@ export function intersect_circles(position0, radius0, position1, radius1) {
     let r1 = radius1;
     let rotated = false;
 
-    if (position0[0] == position1[0]) {
+    if (Math.abs(position0[0] - position1[0]) < WORLD.eps) {
         rotated = true;
         position1 = rotate(position1, position0, -Math.PI * 0.5);
     }
@@ -163,12 +163,8 @@ export function intersect_circles(position0, radius0, position1, radius1) {
     let d = b * b - 4 * a * c;
 
     let intersections = [];
-    if (Math.abs(d) < EPS) {
-        let y = (-b / 2) * a;
-        let x = (-y * C - A) / B;
-        intersections.push([x, y]);
-    } else if (d > 0) {
-        let root = Math.sqrt(d);
+    let root = Math.sqrt(d);
+    if (!isNaN(root)) {
         let y_0 = (-b + root) / (2 * a);
         let y_1 = (-b - root) / (2 * a);
         let x_0 = (-y_0 * C - A) / B;
@@ -241,6 +237,95 @@ export function get_nearest_point(target, candidates) {
     return min_p;
 }
 
+export function get_line_normals_at(start, end, position) {
+    let kx = (position[0] - start[0]) / (end[0] - start[0]);
+    let ky = (position[1] - start[1]) / (end[1] - start[1]);
+    let kx_is_good = kx <= 1.0 && kx >= 0.0;
+    let ky_is_good = ky <= 1.0 && ky >= 0.0;
+    if (
+        Math.abs(end[0] - start[0]) < WORLD.eps &&
+        Math.abs(position[0] - start[0]) < WORLD.eps &&
+        ky_is_good
+    ) {
+        return start[1] < end[1] ? [[1, 0]] : [[-1, 0]];
+    } else if (
+        Math.abs(end[1] - start[1]) < WORLD.eps &&
+        Math.abs(position[1] - start[1]) < WORLD.eps &&
+        kx_is_good
+    ) {
+        return start[0] < end[0] ? [[0, -1]] : [[0, 1]];
+    } else if (Math.abs(kx - ky) < WORLD.eps && kx_is_good && ky_is_good) {
+        return [normalize([start[1] - end[1], end[0] - start[0]])];
+    } else {
+        return [];
+    }
+}
+
+export function get_triangle_normals_at(a, b, c, position) {
+    let normals = [];
+    for (let line of [
+        [a, b],
+        [b, c],
+        [c, a],
+    ]) {
+        let normals_ = get_line_normals_at(line[0], line[1], position);
+        if (normals_.length > 0) {
+            normals.push(...normals_);
+        }
+    }
+    return normals;
+}
+
+export function get_rectangle_normals_at(
+    rectangle_position,
+    width,
+    height,
+    point_position
+) {
+    let a = rectangle_position;
+    let b = [a[0] + width, a[1]];
+    let c = [b[0], a[1] + height];
+    let d = [a[0], c[1]];
+
+    let normals = [];
+    for (let line of [
+        [a, b],
+        [b, c],
+        [c, d],
+        [d, a],
+    ]) {
+        let normals_ = get_line_normals_at(
+            line[0],
+            line[1],
+            point_position
+        );
+        if (normals_.length > 0) {
+            normals.push(...normals_);
+        }
+    }
+    return normals;
+}
+
+export function get_circle_normals_at(
+    circle_position,
+    radius,
+    point_position
+) {
+    let x0 = circle_position[0];
+    let y0 = circle_position[1];
+    let x = point_position[0];
+    let y = point_position[1];
+    let r = radius;
+    let err = Math.sqrt((x0 - x) * (x0 - x) + (y0 - y) * (y0 - y)) - r;
+    err = Math.abs(err);
+    if (err < WORLD.eps) {
+        let vec = [point_position[0] - x0, point_position[1] - y0];
+        return [normalize(vec)];
+    } else {
+        return [];
+    }
+}
+
 export function rotate(point, center, angle) {
     point = [point[0] - center[0], point[1] - center[1]];
     let cos = Math.cos(angle);
@@ -252,13 +337,26 @@ export function rotate(point, center, angle) {
     return [x, y];
 }
 
+export function rotate90(point, center, clockwise) {
+    let vec = sub(point, center);
+    return clockwise ? [-vec[1], vec[0]] : [vec[1], -vec[0]];
+}
+
+export function length(v) {
+    return Math.sqrt(v[0] * v[0] + v[1] * v[1]);
+}
+
 export function normalize(v) {
-    let length = Math.sqrt(v[0] * v[0] + v[1] * v[1]);
-    return [v[0] / length, v[1] / length];
+    let len = length(v);
+    return [v[0] / len, v[1] / len];
 }
 
 export function dot(v1, v2) {
     return v1[0] * v2[0] + v1[1] * v2[1];
+}
+
+export function get_tangent(normal) {
+    return [-normal[1], normal[0]];
 }
 
 export function get_radians_diff(a0, a1) {
@@ -267,88 +365,14 @@ export function get_radians_diff(a0, a1) {
     return diff;
 }
 
-export function get_line_normal_at(start, end, position) {
-    let kx = (position[0] - start[0]) / (end[0] - start[0]);
-    let ky = (position[1] - start[1]) / (end[1] - start[1]);
-    let kx_is_good = kx <= 1.0 && kx >= 0.0;
-    let ky_is_good = ky <= 1.0 && ky >= 0.0;
-    console.log(start[0], end[0]);
-    if (
-        Math.abs(end[0] - start[0]) < EPS &&
-        Math.abs(position[0] - start[0]) < EPS &&
-        ky_is_good
-    ) {
-        return start[1] < end[1] ? [1, 0] : [-1, 0];
-    } else if (
-        Math.abs(end[1] - start[1]) < EPS &&
-        Math.abs(position[1] - start[1]) < EPS &&
-        kx_is_good
-    ) {
-        return start[0] < end[0] ? [0, -1] : [0, 1];
-    } else if (Math.abs(kx - ky) < EPS && kx_is_good && ky_is_good) {
-        return normalize([start[1] - end[1], end[0] - start[0]]);
-    } else {
-        return null;
-    }
+export function add(v1, v2) {
+    return [v1[0] + v2[0], v1[1] + v2[1]];
 }
 
-export function get_triangle_normal_at(a, b, c, position) {
-    let normal = null;
-    for (let line of [
-        [a, b],
-        [b, c],
-        [c, a],
-    ]) {
-        normal = get_line_normal_at(line[0], line[1], position);
-        if (normal != null) {
-            return normal;
-        }
-    }
-    return normal;
+export function sub(v1, v2) {
+    return [v1[0] - v2[0], v1[1] - v2[1]];
 }
 
-export function get_rectangle_normal_at(
-    rectangle_position,
-    width,
-    height,
-    point_position
-) {
-    let a = rectangle_position;
-    let b = [a[0] + width, a[1]];
-    let c = [b[0], a[1] + height];
-    let d = [a[0], c[1]];
-
-    let normal = null;
-    for (let line of [
-        [a, b],
-        [b, c],
-        [c, d],
-        [d, a],
-    ]) {
-        normal = get_line_normal_at(line[0], line[1], point_position);
-        if (normal != null) {
-            return normal;
-        }
-    }
-    return normal;
-}
-
-export function get_circle_normal_at(
-    circle_position,
-    radius,
-    point_position
-) {
-    let x0 = circle_position[0];
-    let y0 = circle_position[1];
-    let x = point_position[0];
-    let y = point_position[1];
-    let r = radius;
-    if (
-        Math.abs((x0 - x) * (x0 - x) + (y0 - y) * (y0 - y) - r * r) < EPS
-    ) {
-        let vec = [point_position[0] - x0, point_position[1] - y0];
-        return normalize(vec);
-    } else {
-        return null;
-    }
+export function scale(v, s) {
+    return [v[0] * s, v[1] * s];
 }

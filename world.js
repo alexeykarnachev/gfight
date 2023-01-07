@@ -1,7 +1,12 @@
 export const WORLD = {
+    eps: 0.00001,
+
     width: 800,
     height: 600,
     pixels_in_meter: 20,
+
+    canvas: null,
+    context: null,
 
     cursor_pos: null,
 
@@ -15,13 +20,40 @@ export const WORLD = {
     guys: null,
 };
 
-WORLD.update_time = () => {
+export function update_world_time() {
     let now = Date.now();
     if (WORLD.time != null) {
         WORLD.dt = now - WORLD.time;
     }
     WORLD.time = now;
-};
+}
+
+export function create_world_canvas() {
+    WORLD.canvas = document.createElement("canvas");
+    WORLD.context = WORLD.canvas.getContext("2d");
+    WORLD.canvas.width = WORLD.width;
+    WORLD.canvas.height = WORLD.height;
+    WORLD.canvas.addEventListener("mousemove", (event) => {
+        let rect = WORLD.canvas.getBoundingClientRect();
+        let x = event.clientX - rect.left;
+        let y = event.clientY - rect.top;
+        WORLD.cursor_pos = [x, y];
+    });
+
+    document.body.appendChild(WORLD.canvas);
+}
+
+export function clear_world_canvas() {
+    WORLD.context.clearRect(0, 0, WORLD.canvas.width, WORLD.canvas.height);
+}
+
+window.addEventListener("keydown", (event) => {
+    WORLD.key_states[event.key] = 1;
+});
+
+window.addEventListener("keyup", (event) => {
+    WORLD.key_states[event.key] = 0;
+});
 
 export function num_to_world(x) {
     return x * WORLD.pixels_in_meter;

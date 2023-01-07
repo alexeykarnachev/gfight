@@ -7,10 +7,10 @@ import {
     intersect_line_with_circle,
     intersect_triangle_with_circle,
     intersect_rectangle_with_circle,
-    get_line_normal_at,
-    get_triangle_normal_at,
-    get_rectangle_normal_at,
-    get_circle_normal_at,
+    get_line_normals_at,
+    get_triangle_normals_at,
+    get_rectangle_normals_at,
+    get_circle_normals_at,
 } from "./geometry.js";
 import {
     draw_line,
@@ -25,8 +25,8 @@ export class Line {
         this.end = end;
     }
 
-    draw(context, color) {
-        draw_line(this.start, this.end, context, color);
+    draw(color, width) {
+        draw_line(this.start, this.end, width, color);
     }
 
     collide_with_line(line) {
@@ -71,8 +71,8 @@ export class Line {
         return intersections;
     }
 
-    get_normal_at(position) {
-        return get_line_normal_at(this.start, this.end, position);
+    get_normals_at(position) {
+        return get_line_normals_at(this.start, this.end, position);
     }
 }
 
@@ -83,8 +83,8 @@ export class Triangle {
         this.c = c;
     }
 
-    draw(context, color) {
-        draw_triangle(this.a, this.b, this.c, context, color);
+    draw(color) {
+        draw_triangle(this.a, this.b, this.c, color);
     }
 
     collide_with_line(line) {
@@ -109,8 +109,8 @@ export class Triangle {
         return intersections;
     }
 
-    get_normal_at(position) {
-        return get_triangle_normal_at(this.a, this.b, this.c, position);
+    get_normals_at(position) {
+        return get_triangle_normals_at(this.a, this.b, this.c, position);
     }
 }
 
@@ -121,14 +121,8 @@ export class Rectangle {
         this.height = height;
     }
 
-    draw(context, color) {
-        draw_rectangle(
-            this.position,
-            this.width,
-            this.height,
-            context,
-            color
-        );
+    draw(color) {
+        draw_rectangle(this.position, this.width, this.height, color);
     }
 
     collide_with_line(line) {
@@ -153,8 +147,8 @@ export class Rectangle {
         return intersections;
     }
 
-    get_normal_at(position) {
-        return get_rectangle_normal_at(
+    get_normals_at(position) {
+        return get_rectangle_normals_at(
             this.position,
             this.width,
             this.height,
@@ -169,8 +163,8 @@ export class Circle {
         this.radius = radius;
     }
 
-    draw(context, color) {
-        draw_circle(this.position, this.radius, context, color);
+    draw(color) {
+        draw_circle(this.position, this.radius, color);
     }
 
     collide_with_line(line) {
@@ -215,7 +209,7 @@ export class Circle {
         return intersections;
     }
 
-    get_normal_at(position) {
-        return get_circle_normal_at(this.position, this.radius, position);
+    get_normals_at(position) {
+        return get_circle_normals_at(this.position, this.radius, position);
     }
 }
