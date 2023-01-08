@@ -12,41 +12,47 @@ import {
     get_radians_diff,
     intersect_line_with_circle,
     intersect_circles,
+    get_orientation,
     get_circle_normals_at,
     get_nearest_point,
     get_square_dist_between_points,
 } from "./geometry.js";
 import { collide_object_with_world, Collision } from "./collision.js";
-import { WORLD, spawn_bullet } from "./world.js";
+import { WORLD, spawn_bullet, get_world_size_in_meters } from "./world.js";
 import { Bullet } from "./bullet.js";
 import { GUY_TAG, GUY_COLORS } from "./constants.js";
 import { ManualController } from "./manual_controller.js";
+import { TowerAIController } from "./tower_ai_controller.js";
 
 export class Guy {
     constructor(tag, position) {
         this.tag = tag;
         this.position = position;
-        this.orientation = 0.0; // Angle in radians
+        this.orientation = get_orientation(
+            this.position,
+            scale(get_world_size_in_meters(), 0.5)
+        );
 
         this.view_angle = 0.5 * Math.PI;
         this.view_dist = 20.0;
         this.n_view_rays = 31;
 
-        this.max_health = 300;
+        this.max_health = 500;
         this.health = this.max_health;
 
-        this.size = 2.0;
+        this.size = 1.5;
 
-        this.move_speed = 5.0;
-        this.rotation_speed = 8.0 * Math.PI;
+        this.move_speed = 10.0;
+        this.rotation_speed = 2.0 * Math.PI;
         this.shoot_speed = 4.0;
-        this.bullet_speed = 50.0;
+        this.bullet_speed = 35.0;
         this.bullet_damage = 100.0;
         this.last_time_shoot = 0.0;
 
         if (this.tag === GUY_TAG.PLAYER) {
             this.controller = new ManualController();
         } else if (this.tag == GUY_TAG.DUMMY_AI) {
+            this.controller = new TowerAIController();
         } else {
             this.controller = null;
         }
@@ -58,16 +64,16 @@ export class Guy {
         if (colors.view_rays != null) {
             let observations = this.observe_world();
             for (let observation of observations) {
-                if (observation != null) {
+                draw_line(
+                    this.position,
+                    observation.position,
+                    0.3,
+                    colors.view_rays
+                );
+                if (observation.target != null) {
                     draw_circle(
                         observation.position,
                         0.1,
-                        colors.view_rays
-                    );
-                    draw_line(
-                        this.position,
-                        observation.position,
-                        0.3,
                         colors.view_rays
                     );
                 }
@@ -152,7 +158,7 @@ export class Guy {
         let groups = [WORLD.obstacles, WORLD.guys];
 
         for (let ray of this.get_view_rays()) {
-            let nearest_observation = null;
+            let nearest_observation = new Collision(ray.end, [], {});
             let nearest_dist = null;
 
             for (let group of groups) {
@@ -185,7 +191,6 @@ export class Guy {
                     }
                 }
             }
-
             observations.push(nearest_observation);
         }
 
@@ -299,11 +304,7 @@ export class Guy {
     }
 
     look_at(target) {
-        let target_view_dir = normalize(sub(target, this.position));
-        let target_orientation = -Math.atan2(
-            target_view_dir[1],
-            target_view_dir[0]
-        );
+        let target_orientation = get_orientation(this.position, target);
         let step = (this.rotation_speed * WORLD.dt) / 1000.0;
 
         let diff = get_radians_diff(target_orientation, this.orientation);

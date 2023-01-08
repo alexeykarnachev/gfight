@@ -20,19 +20,18 @@ function main_loop() {
 function main() {
     create_world_canvas();
 
-    spawn_guy(new Guy(GUY_TAG.PLAYER, [10, 10]));
-    spawn_guy(new Guy(GUY_TAG.DUMMY_AI, [18, 18]));
-    spawn_guy(new Guy(GUY_TAG.DUMMY_AI, [15, 18]));
-    spawn_guy(new Guy(GUY_TAG.DUMMY_AI, [15, 5]));
+    spawn_guy(new Guy(GUY_TAG.PLAYER, [3, 27]));
+    spawn_guy(new Guy(GUY_TAG.DUMMY_AI, [37, 3]));
 
-    spawn_obstacle(new Rectangle([15, 14], 4, 2));
-    spawn_obstacle(new Rectangle([0, 5], 10, 2));
-    spawn_obstacle(new Rectangle([0, 0], 10, 2));
-    spawn_obstacle(new Rectangle([0, 0], 1, 10));
-    spawn_obstacle(new Circle([15, 10], 2));
-    spawn_obstacle(new Circle([10, 15], 2));
-    spawn_obstacle(new Triangle([20, 1], [17, 2], [19, 10]));
-    spawn_obstacle(new Triangle([2, 15], [3, 10], [4, 10]));
+    spawn_obstacle(new Rectangle([0, 0], 40, 1));
+    spawn_obstacle(new Rectangle([39, 1], 1, 28));
+    spawn_obstacle(new Rectangle([0, 29], 40, 1));
+    spawn_obstacle(new Rectangle([0, 1], 1, 28));
+
+    spawn_obstacle(new Rectangle([15, 8], 1, 19));
+
+    spawn_obstacle(new Circle([25, 10], 4));
+    spawn_obstacle(new Triangle([25, 23], [27, 23], [29, 18]));
 
     requestAnimationFrame(main_loop);
 }

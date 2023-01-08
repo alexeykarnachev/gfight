@@ -23,10 +23,10 @@ export let GUY_COLORS = {};
 GUY_COLORS[GUY_TAG.PLAYER] = {
     circle: "orange",
     health_bar: "green",
-    view_rays: "gray",
+    view_rays: "orange",
 };
 GUY_COLORS[GUY_TAG.DUMMY_AI] = {
     circle: "crimson",
     health_bar: "red",
-    view_rays: null,
+    view_rays: "crimson",
 };

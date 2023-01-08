@@ -21,6 +21,13 @@ export const WORLD = {
     bullets: [],
 };
 
+export function get_world_size_in_meters() {
+    return [
+        WORLD.width / WORLD.pixels_in_meter,
+        WORLD.height / WORLD.pixels_in_meter,
+    ];
+}
+
 export function spawn_guy(guy) {
     WORLD.guys.push(guy);
 }

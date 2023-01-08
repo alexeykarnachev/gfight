@@ -360,6 +360,12 @@ export function dot(v1, v2) {
     return v1[0] * v2[0] + v1[1] * v2[1];
 }
 
+export function get_orientation(position, target) {
+    let dir = normalize(sub(target, position));
+    let orientation = -Math.atan2(dir[1], dir[0]);
+    return orientation;
+}
+
 export function get_tangent(normal) {
     return [-normal[1], normal[0]];
 }
