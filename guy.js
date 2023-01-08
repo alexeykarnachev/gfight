@@ -19,9 +19,19 @@ import {
 import { collide_object_with_world, Collision } from "./collision.js";
 import { WORLD, spawn_bullet } from "./world.js";
 import { Bullet } from "./bullet.js";
+import { GUY_TAG, GUY_COLORS } from "./constants.js";
+import { ManualController } from "./manual_controller.js";
 
 export class Guy {
-    constructor(position) {
+    constructor(tag, position) {
+        this.tag = tag;
+        this.position = position;
+        this.orientation = 0.0; // Angle in radians
+
+        this.view_angle = 0.5 * Math.PI;
+        this.view_dist = 20.0;
+        this.n_view_rays = 31;
+
         this.max_health = 300;
         this.health = this.max_health;
 
@@ -32,46 +42,48 @@ export class Guy {
         this.shoot_speed = 4.0;
         this.bullet_speed = 50.0;
         this.bullet_damage = 100.0;
-
-        this.view_angle = 0.5 * Math.PI;
-        this.view_dist = 20.0;
-        this.n_view_rays = 31;
-
-        this.position = position;
-        this.orientation = 0.0; // Angle in radians
         this.last_time_shoot = 0.0;
+
+        if (this.tag === GUY_TAG.PLAYER) {
+            this.controller = new ManualController();
+        } else if (this.tag == GUY_TAG.DUMMY_AI) {
+        } else {
+            this.controller = null;
+        }
     }
 
-    draw(color, health_bar_color, view_rays_color) {
-        if (view_rays_color != null) {
+    draw() {
+        let colors = GUY_COLORS[this.tag];
+
+        if (colors.view_rays != null) {
             let observations = this.observe_world();
             for (let observation of observations) {
                 if (observation != null) {
                     draw_circle(
                         observation.position,
                         0.1,
-                        view_rays_color
+                        colors.view_rays
                     );
                     draw_line(
                         this.position,
                         observation.position,
                         0.3,
-                        view_rays_color
+                        colors.view_rays
                     );
                 }
             }
         }
 
-        if (health_bar_color != null) {
+        if (colors.health_bar != null) {
             let width = (1.3 * this.size * this.health) / this.max_health;
             let height = 0.25;
             let x = this.position[0] - 0.5 * width;
             let y = this.position[1] - this.size / 2.0 - 0.4;
 
-            draw_rectangle([x, y], width, height, health_bar_color);
+            draw_rectangle([x, y], width, height, colors.health_bar);
         }
 
-        draw_circle(this.position, this.size / 2.0, color);
+        draw_circle(this.position, this.size / 2.0, colors.circle);
     }
 
     get_view_direction() {
@@ -323,20 +335,16 @@ export class Guy {
             position
         );
     }
+
+    update() {
+        if (this.controller != null) {
+            this.controller.update(this);
+        }
+        if (this.health <= 0.0) {
+            this.destroy();
+            return null;
+        }
+
+        return this;
+    }
 }
-
-export const STEP_DIRECTION = {
-    FORWARD: 0.0,
-    RIGHT: -0.5 * Math.PI,
-    LEFT: 0.5 * Math.PI,
-    BACK: Math.PI,
-    FORWARD_RIGHT: -0.25 * Math.PI,
-    FORWARD_LEFT: 0.25 * Math.PI,
-    BACK_RIGHT: -0.75 * Math.PI,
-    BACK_LEFT: 0.75 * Math.PI,
-};
-
-export const ROTATION_DIRECTION = {
-    LEFT: 1.0,
-    RIGHT: -1.0,
-};

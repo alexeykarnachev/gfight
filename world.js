@@ -33,12 +33,25 @@ export function spawn_bullet(bullet) {
     WORLD.bullets.push(bullet);
 }
 
-export function update_world_time() {
+function update_world_time() {
     let now = Date.now();
     if (WORLD.time != null) {
         WORLD.dt = now - WORLD.time;
     }
     WORLD.time = now;
+}
+
+export function update_world() {
+    update_world_time();
+    WORLD.guys = WORLD.guys.filter((g) => g.update() != null);
+    WORLD.bullets = WORLD.bullets.filter((b) => b.update() != null);
+}
+
+export function draw_world() {
+    WORLD.context.clearRect(0, 0, WORLD.canvas.width, WORLD.canvas.height);
+    WORLD.bullets.map((b) => b.draw());
+    WORLD.guys.map((g) => g.draw());
+    WORLD.obstacles.map((o) => o.draw("gray"));
 }
 
 export function create_world_canvas() {
@@ -54,10 +67,6 @@ export function create_world_canvas() {
     });
 
     document.body.appendChild(WORLD.canvas);
-}
-
-export function clear_world_canvas() {
-    WORLD.context.clearRect(0, 0, WORLD.canvas.width, WORLD.canvas.height);
 }
 
 window.addEventListener("keydown", (event) => {

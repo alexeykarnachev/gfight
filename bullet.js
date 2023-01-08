@@ -14,8 +14,8 @@ export class Bullet {
         this.ttl = 2000.0;
     }
 
-    draw(color) {
-        draw_circle(this.position, 0.15, color);
+    draw() {
+        draw_circle(this.position, 0.15, "rosyBrown");
     }
 
     get_primitive() {
@@ -31,7 +31,7 @@ export class Bullet {
 
     destroy() {}
 
-    step() {
+    update() {
         this.ttl -= WORLD.dt;
 
         this.position = add(
@@ -42,13 +42,14 @@ export class Bullet {
         let collisions = collide_object_with_world(this);
         let collision = collisions.find((c) => c.target !== this.owner);
         if (collision == null) {
-            return;
+            return this;
         }
 
         if (collision.target.get_hit_by_bullet != null) {
             collision.target.get_hit_by_bullet(this);
         }
 
-        this.ttl = 0.0;
+        this.destroy();
+        return null;
     }
 }
