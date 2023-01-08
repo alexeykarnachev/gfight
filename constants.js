@@ -9,11 +9,6 @@ export const STEP_DIRECTION = {
     BACK_LEFT: 0.75 * Math.PI,
 };
 
-export const ROTATION_DIRECTION = {
-    LEFT: 1.0,
-    RIGHT: -1.0,
-};
-
 export const GUY_TAG = {
     PLAYER: 0,
     DUMMY_AI: 1,

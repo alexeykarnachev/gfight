@@ -22,7 +22,7 @@ import { WORLD, spawn_bullet, get_world_size_in_meters } from "./world.js";
 import { Bullet } from "./bullet.js";
 import { GUY_TAG, GUY_COLORS } from "./constants.js";
 import { ManualController } from "./manual_controller.js";
-import { TowerAIController } from "./tower_ai_controller.js";
+import { AITowerController } from "./ai_tower_controller.js";
 
 export class Guy {
     constructor(tag, position) {
@@ -52,7 +52,7 @@ export class Guy {
         if (this.tag === GUY_TAG.PLAYER) {
             this.controller = new ManualController();
         } else if (this.tag == GUY_TAG.DUMMY_AI) {
-            this.controller = new TowerAIController();
+            this.controller = new AITowerController();
         } else {
             this.controller = null;
         }
@@ -145,11 +145,6 @@ export class Guy {
 
     get_hit_by_bullet(bullet) {
         this.health -= bullet.damage;
-    }
-
-    rotate(direction) {
-        let step = (this.rotation_speed * WORLD.dt) / 1000.0;
-        this.orientation += direction * step;
     }
 
     observe_world() {

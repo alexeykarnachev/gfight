@@ -1,5 +1,5 @@
 import { WORLD } from "./world.js";
-import { STEP_DIRECTION, ROTATION_DIRECTION } from "./constants.js";
+import { STEP_DIRECTION } from "./constants.js";
 import { vec2_to_local } from "./world.js";
 
 export class ManualController {
@@ -35,10 +35,6 @@ export class ManualController {
             guy.step(STEP_DIRECTION.RIGHT);
         } else if (WORLD.key_states["a"] == 1) {
             guy.step(STEP_DIRECTION.LEFT);
-        } else if (WORLD.key_states["ArrowLeft"] == 1) {
-            guy.rotate(ROTATION_DIRECTION.LEFT);
-        } else if (WORLD.key_states["ArrowRight"] == 1) {
-            guy.rotate(ROTATION_DIRECTION.RIGHT);
         }
 
         if (WORLD.mouse_states[0] == 1) {

@@ -1,10 +1,6 @@
-import {
-    STEP_DIRECTION,
-    ROTATION_DIRECTION,
-    GUY_TAG,
-} from "./constants.js";
+import { GUY_TAG } from "./constants.js";
 
-export class TowerAIController {
+export class AITowerController {
     constructor() {}
 
     update(guy) {
