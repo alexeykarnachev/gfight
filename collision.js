@@ -23,7 +23,9 @@ export class Collision {
     }
 }
 
-export function collide_primitive_with_world(primitive) {
+export function collide_object_with_world(object) {
+    let primitive = object.get_primitive();
+
     let collision_fn;
     if (primitive instanceof Line) {
         collision_fn = "collide_with_line";
@@ -42,10 +44,10 @@ export function collide_primitive_with_world(primitive) {
 
     let collisions = [];
     for (let group of groups) {
-        for (let object of group.objects) {
-            if (object.collide_with_circle != null) {
-                for (let position of object[collision_fn](primitive)) {
-                    let normals = object.get_normals_at(position);
+        for (let target of group.objects) {
+            if (target[collision_fn] != null && target !== object) {
+                for (let position of target[collision_fn](primitive)) {
+                    let normals = target.get_normals_at(position);
                     collisions.push(
                         new Collision(group.tag, position, normals)
                     );

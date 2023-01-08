@@ -11,14 +11,30 @@ export const WORLD = {
     cursor_pos: null,
 
     key_states: {},
+    mouse_states: {},
 
     dt: 0,
-    time: null,
+    time: Date.now(),
 
-    player: null,
-    obstacles: null,
-    guys: null,
+    obstacles: [],
+    guys: [],
+    bullets: [],
 };
+
+export function spawn_guy(guy) {
+    guy.spawn_time = WORLD.time;
+    WORLD.guys.push(guy);
+}
+
+export function spawn_obstacle(obstacle) {
+    obstacle.spawn_time = WORLD.time;
+    WORLD.obstacles.push(obstacle);
+}
+
+export function spawn_bullet(bullet) {
+    bullet.spawn_time = WORLD.time;
+    WORLD.bullets.push(bullet);
+}
 
 export function update_world_time() {
     let now = Date.now();
@@ -51,8 +67,16 @@ window.addEventListener("keydown", (event) => {
     WORLD.key_states[event.key] = 1;
 });
 
+window.addEventListener("mousedown", (event) => {
+    WORLD.mouse_states[event.button] = 1;
+});
+
 window.addEventListener("keyup", (event) => {
     WORLD.key_states[event.key] = 0;
+});
+
+window.addEventListener("mouseup", (event) => {
+    WORLD.mouse_states[event.button] = 0;
 });
 
 export function num_to_world(x) {

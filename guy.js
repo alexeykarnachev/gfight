@@ -17,24 +17,27 @@ import {
     get_square_dist_between_points,
 } from "./geometry.js";
 import {
-    collide_primitive_with_world,
+    collide_object_with_world,
     COLLISION_TAG,
     Collision,
 } from "./collision.js";
-import { WORLD } from "./world.js";
+import { WORLD, spawn_bullet } from "./world.js";
+import { Bullet } from "./bullet.js";
 
 export class Guy {
     constructor(position) {
         this.size = 2.0;
-        this.move_speed = 2.0;
-        this.rotation_speed = 8.0 * Math.PI;
         this.move_speed = 5.0;
+        this.rotation_speed = 8.0 * Math.PI;
+        this.shoot_speed = 4.0;
+        this.bullet_speed = 20.0;
         this.view_angle = Math.PI;
         this.view_dist = 20.0;
         this.n_view_rays = 21;
 
         this.position = position;
         this.orientation = 0.0; // Angle in radians
+        this.last_time_shoot = 0.0;
     }
 
     draw(color, view_rays_color) {
@@ -47,7 +50,11 @@ export class Guy {
         draw_circle(this.position, this.size / 2.0, color);
     }
 
-    get_circle() {
+    get_view_direction() {
+        return [Math.cos(this.orientation), -Math.sin(this.orientation)];
+    }
+
+    get_primitive() {
         return new Circle(this.position, this.size / 2.0);
     }
 
@@ -111,6 +118,9 @@ export class Guy {
 
             for (let group of groups) {
                 for (let object of group.objects) {
+                    if (object === this) {
+                        continue;
+                    }
                     let position = get_nearest_point(
                         ray.start,
                         object.collide_with_line(ray)
@@ -145,16 +155,15 @@ export class Guy {
             Math.cos(this.orientation + direction),
             -Math.sin(this.orientation + direction),
         ];
-        let circle = this.get_circle();
+        let start_position = this.position;
         let total_step_length = (this.move_speed * WORLD.dt) / 1000.0;
         let max_step_length = total_step_length;
 
         // Try the max possible step first
         let step = scale(base_move_direction, max_step_length);
-        circle.position = add(this.position, step);
-        let collisions = collide_primitive_with_world(circle);
+        this.position = add(this.position, step);
+        let collisions = collide_object_with_world(this);
         if (collisions.length <= 1) {
-            this.position = circle.position;
             return;
         }
 
@@ -167,8 +176,8 @@ export class Guy {
                 min_step_length +
                 (max_step_length - min_step_length) / 2.0;
             let step = scale(base_move_direction, curr_step_length);
-            circle.position = add(this.position, step);
-            let curr_collisions = collide_primitive_with_world(circle);
+            this.position = add(this.position, step);
+            let curr_collisions = collide_object_with_world(this);
             if (curr_collisions.length <= 1) {
                 best_step_length = curr_step_length;
                 min_step_length = curr_step_length;
@@ -176,15 +185,17 @@ export class Guy {
             } else {
                 max_step_length = curr_step_length;
             }
+
+            this.position = start_position;
         }
 
         // Apply the best straight step
         this.position = add(
-            this.position,
+            start_position,
             scale(base_move_direction, best_step_length)
         );
-
-        if (collisions.length == 0) {
+        start_position = this.position;
+        if (collisions.length <= 1) {
             return;
         }
 
@@ -201,15 +212,15 @@ export class Guy {
             average_tangent,
             step_length * dot(base_move_direction, average_tangent)
         );
-        circle.position = add(this.position, step);
-        collisions = collide_primitive_with_world(circle);
+        start_position = this.position;
+        this.position = add(this.position, step);
+        collisions = collide_object_with_world(this);
         if (collisions.length <= 1) {
-            this.position = circle.position;
             return;
         }
 
         // If we can't slide along the average tangent, let's try to slide
-        // along the any tangent
+        // along any of the tangents
         best_step_length = 0.0;
         let best_step = [0.0, 0.0];
         for (let tangent of tangents) {
@@ -217,16 +228,31 @@ export class Guy {
                 tangent,
                 step_length * dot(base_move_direction, tangent)
             );
-            circle.position = add(this.position, step);
-            collisions = collide_primitive_with_world(circle);
+            this.position = add(start_position, step);
+            collisions = collide_object_with_world(this);
             if (collisions.length <= 1 && step_length > best_step_length) {
-                console.log(best_step_length, step_length);
                 best_step_length = step_length;
                 best_step = step;
             }
         }
 
-        this.position = add(this.position, best_step);
+        this.position = add(start_position, best_step);
+    }
+
+    shoot() {
+        let shoot_period = 1000.0 / this.shoot_speed;
+        if (WORLD.time - this.last_time_shoot < shoot_period) {
+            return;
+        }
+
+        this.last_time_shoot = WORLD.time;
+        let view_direction = this.get_view_direction();
+        let velocity = scale(view_direction, this.bullet_speed);
+        let start_position = add(
+            this.position,
+            scale(view_direction, 0.75 * this.size)
+        );
+        spawn_bullet(new Bullet(start_position, velocity));
     }
 
     look_at(target) {
@@ -273,6 +299,10 @@ export const STEP_DIRECTION = {
     RIGHT: -0.5 * Math.PI,
     LEFT: 0.5 * Math.PI,
     BACK: Math.PI,
+    FORWARD_RIGHT: -0.25 * Math.PI,
+    FORWARD_LEFT: 0.25 * Math.PI,
+    BACK_RIGHT: -0.75 * Math.PI,
+    BACK_LEFT: 0.75 * Math.PI,
 };
 
 export const ROTATION_DIRECTION = {
