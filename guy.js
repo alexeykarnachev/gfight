@@ -137,40 +137,42 @@ export class Guy {
             }
         }
 
-        // for (let observation of observations) {
-        //     draw_circle(observation.position, 0.1, "white");
-        // }
-
         return observations;
     }
 
     step(direction) {
-        let move_direction = [
+        let base_move_direction = [
             Math.cos(this.orientation + direction),
             -Math.sin(this.orientation + direction),
         ];
+        let circle = this.get_circle();
         let total_step_length = (this.move_speed * WORLD.dt) / 1000.0;
         let max_step_length = total_step_length;
+
+        // Try the max possible step first
+        let step = scale(base_move_direction, max_step_length);
+        circle.position = add(this.position, step);
+        let collisions = collide_primitive_with_world(circle);
+        if (collisions.length <= 1) {
+            this.position = circle.position;
+            return;
+        }
+
+        // If max step produces more than 1 collision,
+        // try to binary search for the best straight step
         let min_step_length = 0.0;
         let best_step_length = 0.0;
-        let collisions = [];
-
-        // Binary search best straight step
         while (max_step_length - min_step_length > WORLD.eps) {
             let curr_step_length =
                 min_step_length +
                 (max_step_length - min_step_length) / 2.0;
-            let step = scale(move_direction, curr_step_length);
-            let new_position = add(this.position, step);
-            collisions = collide_primitive_with_world(
-                new Circle(new_position, this.size / 2.0)
-            );
-            if (collisions.length == 0) {
+            let step = scale(base_move_direction, curr_step_length);
+            circle.position = add(this.position, step);
+            let curr_collisions = collide_primitive_with_world(circle);
+            if (curr_collisions.length <= 1) {
                 best_step_length = curr_step_length;
                 min_step_length = curr_step_length;
-            } else if (collisions.length == 1) {
-                best_step = curr_step_length;
-                break;
+                collisions = curr_collisions;
             } else {
                 max_step_length = curr_step_length;
             }
@@ -179,7 +181,7 @@ export class Guy {
         // Apply the best straight step
         this.position = add(
             this.position,
-            scale(move_direction, best_step_length)
+            scale(base_move_direction, best_step_length)
         );
 
         if (collisions.length == 0) {
@@ -194,20 +196,15 @@ export class Guy {
         let average_tangent = normalize(
             tangents.reduce((acc, curr) => add(acc, curr), [0.0, 0.0])
         );
-        move_direction = scale(
-            average_tangent,
-            dot(move_direction, average_tangent)
-        );
 
-        let position = add(
-            this.position,
-            scale(move_direction, step_length)
+        step = scale(
+            average_tangent,
+            step_length * dot(base_move_direction, average_tangent)
         );
-        collisions = collide_primitive_with_world(
-            new Circle(position, this.size / 2.0)
-        );
+        circle.position = add(this.position, step);
+        collisions = collide_primitive_with_world(circle);
         if (collisions.length <= 1) {
-            this.position = position;
+            this.position = circle.position;
             return;
         }
 
@@ -215,19 +212,15 @@ export class Guy {
         // along the any tangent
         best_step_length = 0.0;
         let best_step = [0.0, 0.0];
-        for (let i = 0; i < tangents.length; ++i) {
-            move_direction = [
-                Math.cos(this.orientation + direction),
-                -Math.sin(this.orientation + direction),
-            ];
-            let tangent_proj = dot(move_direction, tangents[i]);
-            let step = scale(tangents[i], step_length * tangent_proj);
-            let position = add(this.position, step);
-
-            collisions = collide_primitive_with_world(
-                new Circle(position, this.size / 2.0)
+        for (let tangent of tangents) {
+            let step = scale(
+                tangent,
+                step_length * dot(base_move_direction, tangent)
             );
+            circle.position = add(this.position, step);
+            collisions = collide_primitive_with_world(circle);
             if (collisions.length <= 1 && step_length > best_step_length) {
+                console.log(best_step_length, step_length);
                 best_step_length = step_length;
                 best_step = step;
             }

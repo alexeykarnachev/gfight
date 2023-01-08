@@ -56,9 +56,12 @@ function main() {
     WORLD.obstacles = [
         new Rectangle([15, 14], 4, 2),
         new Rectangle([0, 5], 10, 2),
+        new Rectangle([0, 0], 10, 1),
+        new Rectangle([0, 0], 1, 10),
         new Circle([15, 10], 2),
         new Circle([10, 15], 2),
         new Triangle([20, 1], [17, 2], [19, 10]),
+        new Triangle([2, 15], [3, 10], [4, 10]),
     ];
 
     requestAnimationFrame(main_loop);
