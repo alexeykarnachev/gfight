@@ -22,9 +22,17 @@ function main_loop() {
     }
 
     // Guys and player
-    for (let guy of WORLD.guys) {
+    let alive_guys = [];
+    for (let i = 0; i < WORLD.guys.length; ++i) {
+        let guy = WORLD.guys[i];
+        if (guy.health <= 0.0) {
+            guy.destroy();
+            continue;
+        }
+        alive_guys.push(guy);
+
         if (guy !== PLAYER) {
-            guy.draw("pink");
+            guy.draw("pink", "red");
             continue;
         }
 
@@ -66,22 +74,24 @@ function main_loop() {
         if (WORLD.mouse_states[0] == 1) {
             guy.shoot();
         }
-        guy.draw("orange", "gray", "rgb(100,255,255)");
+        guy.draw("orange", "green", "gray");
     }
 
+    WORLD.guys = alive_guys;
+
     // Bullets
-    let n_bullets_to_destroy = 0;
-    for (let i = WORLD.bullets.length - 1; i >= 0; --i) {
+    let alive_bullets = [];
+    for (let i = 0; i < WORLD.bullets.length; ++i) {
         let bullet = WORLD.bullets[i];
-        if (WORLD.time - bullet.spawn_time >= bullet.ttl) {
-            n_bullets_to_destroy = i + 1;
-            break;
-        } else {
-            bullet.step();
-            bullet.draw("red");
+        if (bullet.ttl <= 0.0) {
+            bullet.destroy();
+            continue;
         }
+        alive_bullets.push(bullet);
+        bullet.step();
+        bullet.draw("red");
     }
-    WORLD.bullets = WORLD.bullets.slice(n_bullets_to_destroy);
+    WORLD.bullets = alive_bullets;
 
     update_world_time();
     requestAnimationFrame(main_loop);

@@ -1,4 +1,4 @@
-import { draw_line, draw_circle } from "./draw.js";
+import { draw_line, draw_circle, draw_rectangle } from "./draw.js";
 import { Line, Circle } from "./primitives.js";
 import {
     add,
@@ -22,7 +22,8 @@ import { Bullet } from "./bullet.js";
 
 export class Guy {
     constructor(position) {
-        this.health = 1000.0;
+        this.max_health = 300;
+        this.health = this.max_health;
 
         this.size = 2.0;
 
@@ -30,6 +31,7 @@ export class Guy {
         this.rotation_speed = 8.0 * Math.PI;
         this.shoot_speed = 4.0;
         this.bullet_speed = 50.0;
+        this.bullet_damage = 100.0;
 
         this.view_angle = 0.5 * Math.PI;
         this.view_dist = 20.0;
@@ -40,26 +42,35 @@ export class Guy {
         this.last_time_shoot = 0.0;
     }
 
-    draw(color, view_rays_color, observations_color) {
-        if (observations_color != null) {
+    draw(color, health_bar_color, view_rays_color) {
+        if (view_rays_color != null) {
             let observations = this.observe_world();
             for (let observation of observations) {
                 if (observation != null) {
                     draw_circle(
                         observation.position,
                         0.1,
-                        observations_color
+                        view_rays_color
+                    );
+                    draw_line(
+                        this.position,
+                        observation.position,
+                        0.3,
+                        view_rays_color
                     );
                 }
             }
         }
 
-        if (view_rays_color != null) {
-            let rays = this.get_view_rays();
-            rays.map((r) =>
-                draw_line(r.start, r.end, 1.0, view_rays_color)
-            );
+        if (health_bar_color != null) {
+            let width = (1.3 * this.size * this.health) / this.max_health;
+            let height = 0.25;
+            let x = this.position[0] - 0.5 * width;
+            let y = this.position[1] - this.size / 2.0 - 0.4;
+
+            draw_rectangle([x, y], width, height, health_bar_color);
         }
+
         draw_circle(this.position, this.size / 2.0, color);
     }
 
@@ -114,6 +125,10 @@ export class Guy {
         );
     }
 
+    get_hit_by_bullet(bullet) {
+        this.health -= bullet.damage;
+    }
+
     rotate(direction) {
         let step = (this.rotation_speed * WORLD.dt) / 1000.0;
         this.orientation += direction * step;
@@ -164,6 +179,8 @@ export class Guy {
 
         return observations;
     }
+
+    destroy() {}
 
     step(direction) {
         let base_move_direction = [
@@ -264,7 +281,9 @@ export class Guy {
         let view_direction = this.get_view_direction();
         let velocity = scale(view_direction, this.bullet_speed);
         let start_position = this.position;
-        spawn_bullet(new Bullet(start_position, velocity, this));
+        spawn_bullet(
+            new Bullet(start_position, velocity, this.bullet_damage, this)
+        );
     }
 
     look_at(target) {

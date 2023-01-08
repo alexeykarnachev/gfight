@@ -22,17 +22,14 @@ export const WORLD = {
 };
 
 export function spawn_guy(guy) {
-    guy.spawn_time = WORLD.time;
     WORLD.guys.push(guy);
 }
 
 export function spawn_obstacle(obstacle) {
-    obstacle.spawn_time = WORLD.time;
     WORLD.obstacles.push(obstacle);
 }
 
 export function spawn_bullet(bullet) {
-    bullet.spawn_time = WORLD.time;
     WORLD.bullets.push(bullet);
 }
 

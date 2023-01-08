@@ -5,10 +5,11 @@ import { Line } from "./primitives.js";
 import { collide_object_with_world } from "./collision.js";
 
 export class Bullet {
-    constructor(start_position, velocity, owner) {
+    constructor(start_position, velocity, damage, owner) {
         this.start_position = start_position;
         this.position = start_position;
         this.velocity = velocity;
+        this.damage = damage;
         this.owner = owner;
         this.ttl = 2000.0;
     }
@@ -28,7 +29,11 @@ export class Bullet {
         return new Line(start, end);
     }
 
+    destroy() {}
+
     step() {
+        this.ttl -= WORLD.dt;
+
         this.position = add(
             this.position,
             scale(this.velocity, WORLD.dt / 1000.0)
@@ -39,6 +44,11 @@ export class Bullet {
         if (collision == null) {
             return;
         }
+
+        if (collision.target.get_hit_by_bullet != null) {
+            collision.target.get_hit_by_bullet(this);
+        }
+
         this.ttl = 0.0;
     }
 }
