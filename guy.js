@@ -16,31 +16,44 @@ import {
     get_nearest_point,
     get_square_dist_between_points,
 } from "./geometry.js";
-import {
-    collide_object_with_world,
-    COLLISION_TAG,
-    Collision,
-} from "./collision.js";
+import { collide_object_with_world, Collision } from "./collision.js";
 import { WORLD, spawn_bullet } from "./world.js";
 import { Bullet } from "./bullet.js";
 
 export class Guy {
     constructor(position) {
+        this.health = 1000.0;
+
         this.size = 2.0;
+
         this.move_speed = 5.0;
         this.rotation_speed = 8.0 * Math.PI;
         this.shoot_speed = 4.0;
-        this.bullet_speed = 20.0;
-        this.view_angle = Math.PI;
+        this.bullet_speed = 50.0;
+
+        this.view_angle = 0.5 * Math.PI;
         this.view_dist = 20.0;
-        this.n_view_rays = 21;
+        this.n_view_rays = 31;
 
         this.position = position;
         this.orientation = 0.0; // Angle in radians
         this.last_time_shoot = 0.0;
     }
 
-    draw(color, view_rays_color) {
+    draw(color, view_rays_color, observations_color) {
+        if (observations_color != null) {
+            let observations = this.observe_world();
+            for (let observation of observations) {
+                if (observation != null) {
+                    draw_circle(
+                        observation.position,
+                        0.1,
+                        observations_color
+                    );
+                }
+            }
+        }
+
         if (view_rays_color != null) {
             let rays = this.get_view_rays();
             rays.map((r) =>
@@ -64,7 +77,12 @@ export class Guy {
             this.position[0] + this.view_dist,
             this.position[1],
         ];
-        let step = this.view_angle / (this.n_view_rays - 1);
+        let step;
+        if (this.n_view_rays == 1) {
+            step = 0.0;
+        } else {
+            step = this.view_angle / (this.n_view_rays - 1);
+        }
 
         for (let i = 0; i < this.n_view_rays; ++i) {
             let ray = rotate(
@@ -104,35 +122,36 @@ export class Guy {
     observe_world() {
         let observations = [];
 
-        let groups = [
-            {
-                objects: WORLD.obstacles,
-                tag: COLLISION_TAG.OBSTACLE_OBSERVE,
-            },
-            { objects: WORLD.guys, tag: COLLISION_TAG.GUY_OBSERVE },
-        ];
+        let groups = [WORLD.obstacles, WORLD.guys];
 
         for (let ray of this.get_view_rays()) {
             let nearest_observation = null;
             let nearest_dist = null;
 
             for (let group of groups) {
-                for (let object of group.objects) {
-                    if (object === this) {
+                for (let target of group) {
+                    if (target === this) {
                         continue;
                     }
+
                     let position = get_nearest_point(
                         ray.start,
-                        object.collide_with_line(ray)
+                        target.collide_with_line(ray)
                     );
                     if (position == null) {
                         continue;
                     }
+
                     let dist = get_square_dist_between_points(
                         ray.start,
                         position
                     );
-                    let observation = new Collision(group.tag, [position]);
+                    let normal = target.get_normals_at(position);
+                    let observation = new Collision(
+                        position,
+                        [normal],
+                        target
+                    );
                     if (nearest_dist == null || dist < nearest_dist) {
                         nearest_observation = observation;
                         nearest_dist = dist;
@@ -140,11 +159,7 @@ export class Guy {
                 }
             }
 
-            if (nearest_observation != null) {
-                observations.push(nearest_observation);
-            } else {
-                observations.push(new Collision(COLLISION_TAG.NONE, []));
-            }
+            observations.push(nearest_observation);
         }
 
         return observations;
@@ -248,11 +263,8 @@ export class Guy {
         this.last_time_shoot = WORLD.time;
         let view_direction = this.get_view_direction();
         let velocity = scale(view_direction, this.bullet_speed);
-        let start_position = add(
-            this.position,
-            scale(view_direction, 0.75 * this.size)
-        );
-        spawn_bullet(new Bullet(start_position, velocity));
+        let start_position = this.position;
+        spawn_bullet(new Bullet(start_position, velocity, this));
     }
 
     look_at(target) {

@@ -20,14 +20,14 @@ export function intersect_lines(start0, end0, start1, end1) {
     let y = e + t * (f - e);
 
     if (
-        x >= Math.min(a, b) &&
-        x >= Math.min(c, d) &&
-        x <= Math.max(a, b) &&
-        x <= Math.max(c, d) &&
-        y >= Math.min(e, f) &&
-        y >= Math.min(h, g) &&
-        y <= Math.max(e, f) &&
-        y <= Math.max(h, g)
+        x >= Math.min(a, b) - WORLD.eps &&
+        x >= Math.min(c, d) - WORLD.eps &&
+        x <= Math.max(a, b) + WORLD.eps &&
+        x <= Math.max(c, d) + WORLD.eps &&
+        y >= Math.min(e, f) - WORLD.eps &&
+        y >= Math.min(h, g) - WORLD.eps &&
+        y <= Math.max(e, f) + WORLD.eps &&
+        y <= Math.max(h, g) + WORLD.eps
     ) {
         return [[x, y]];
     } else {
@@ -60,7 +60,7 @@ export function intersect_line_with_rectangle(
     let intersections = [
         intersect_lines(start, end, a, b),
         intersect_lines(start, end, b, c),
-        intersect_lines(start, end, c, d),
+        intersect_lines(start, end, c, d, true),
         intersect_lines(start, end, d, a),
     ].flat(1);
 
@@ -217,6 +217,11 @@ export function get_square_dist_between_points(p0, p1) {
     let yd = p1[1] - p0[1];
     let d2 = xd * xd + yd * yd;
     return d2;
+}
+
+export function get_dist_between_points(p0, p1) {
+    let d = Math.sqrt(get_square_dist_between_points(p0, p1));
+    return d;
 }
 
 export function get_nearest_point(target, candidates) {
