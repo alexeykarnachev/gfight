@@ -29,7 +29,9 @@ export class Bullet {
         return new Line(start, end);
     }
 
-    destroy() {}
+    destroy() {
+        return null;
+    }
 
     update() {
         this.ttl -= WORLD.dt;
@@ -49,7 +51,6 @@ export class Bullet {
             collision.target.get_hit_by_bullet(this);
         }
 
-        this.destroy();
-        return null;
+        return this.destroy();
     }
 }

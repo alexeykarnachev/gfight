@@ -13,13 +13,23 @@ export const WORLD = {
     key_states: {},
     mouse_states: {},
 
-    dt: 0,
-    time: Date.now(),
+    dt: 0.0,
+    time: 0.0,
 
     obstacles: [],
     guys: [],
     bullets: [],
 };
+
+export function reset_world() {
+    WORLD.key_states = {};
+    WORLD.mouse_states = {};
+    WORLD.dt = 0.0;
+    WORLD.time = Date.now();
+    WORLD.obstacles = [];
+    WORLD.guys = [];
+    WORLD.bullets = [];
+}
 
 export function get_world_size_in_meters() {
     return [
@@ -40,16 +50,21 @@ export function spawn_bullet(bullet) {
     WORLD.bullets.push(bullet);
 }
 
-function update_world_time() {
-    let now = Date.now();
-    if (WORLD.time != null) {
-        WORLD.dt = now - WORLD.time;
+function update_world_time(dt) {
+    if (dt != null) {
+        WORLD.time += dt;
+        WORLD.dt = dt;
+    } else {
+        let now = Date.now();
+        if (WORLD.time != null) {
+            WORLD.dt = now - WORLD.time;
+        }
+        WORLD.time = now;
     }
-    WORLD.time = now;
 }
 
-export function update_world() {
-    update_world_time();
+export function update_world(dt) {
+    update_world_time(dt);
     WORLD.guys = WORLD.guys.filter((g) => g.update() != null);
     WORLD.bullets = WORLD.bullets.filter((b) => b.update() != null);
 }

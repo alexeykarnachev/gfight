@@ -26,9 +26,12 @@ import { AITowerController } from "./ai_tower_controller.js";
 import { AINeuralController } from "./ai_neural_controller.js";
 
 export class Guy {
-    constructor(tag, position) {
+    constructor(tag, position, is_respawnable, controller) {
         this.tag = tag;
-        this.position = position;
+        this.spawn_position = [...position];
+        this.position = [...position];
+        this.is_respawnable = is_respawnable;
+        this.controller = controller;
         this.orientation = get_orientation(
             this.position,
             scale(get_world_size_in_meters(), 0.5)
@@ -40,6 +43,7 @@ export class Guy {
 
         this.max_health = 500;
         this.health = this.max_health;
+        this.score = 0.0;
 
         this.size = 1.5;
 
@@ -49,16 +53,6 @@ export class Guy {
         this.bullet_speed = 35.0;
         this.bullet_damage = 100.0;
         this.last_time_shoot = 0.0;
-
-        if (this.tag === GUY_TAG.PLAYER) {
-            this.controller = new ManualController(this);
-        } else if (this.tag === GUY_TAG.TOWER_AI) {
-            this.controller = new AITowerController(this);
-        } else if (this.tag === GUY_TAG.NEURAL_AI) {
-            this.controller = new AINeuralController(this);
-        } else {
-            this.controller = null;
-        }
     }
 
     draw() {
@@ -148,6 +142,8 @@ export class Guy {
 
     get_hit_by_bullet(bullet) {
         this.health -= bullet.damage;
+        this.score -= 10.0;
+        bullet.owner.score += 10.0;
     }
 
     observe_world() {
@@ -195,7 +191,13 @@ export class Guy {
         return observations;
     }
 
-    destroy() {}
+    destroy() {
+        this.score -= 1000.0;
+        if (this.is_respawnable) {
+            return this;
+        }
+        return null;
+    }
 
     step(direction) {
         let base_move_direction = [
@@ -284,6 +286,12 @@ export class Guy {
         }
 
         this.position = add(start_position, best_step);
+        if (
+            (total_step_length - best_step_length) / total_step_length >
+            0.9
+        ) {
+            this.score -= 1.0;
+        }
     }
 
     shoot() {
@@ -337,11 +345,10 @@ export class Guy {
 
     update() {
         if (this.controller != null) {
-            this.controller.update();
+            this.controller.update(this);
         }
         if (this.health <= 0.0) {
-            this.destroy();
-            return null;
+            return this.destroy();
         }
 
         return this;
