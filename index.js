@@ -21,7 +21,7 @@ function main() {
     create_world_canvas();
 
     spawn_guy(new Guy(GUY_TAG.PLAYER, [3, 27]));
-    spawn_guy(new Guy(GUY_TAG.DUMMY_AI, [37, 3]));
+    spawn_guy(new Guy(GUY_TAG.NEURAL_AI, [37, 3]));
 
     spawn_obstacle(new Rectangle([0, 0], 40, 1));
     spawn_obstacle(new Rectangle([39, 1], 1, 28));

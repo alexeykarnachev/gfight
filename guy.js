@@ -23,6 +23,7 @@ import { Bullet } from "./bullet.js";
 import { GUY_TAG, GUY_COLORS } from "./constants.js";
 import { ManualController } from "./manual_controller.js";
 import { AITowerController } from "./ai_tower_controller.js";
+import { AINeuralController } from "./ai_neural_controller.js";
 
 export class Guy {
     constructor(tag, position) {
@@ -50,9 +51,11 @@ export class Guy {
         this.last_time_shoot = 0.0;
 
         if (this.tag === GUY_TAG.PLAYER) {
-            this.controller = new ManualController();
-        } else if (this.tag == GUY_TAG.DUMMY_AI) {
-            this.controller = new AITowerController();
+            this.controller = new ManualController(this);
+        } else if (this.tag === GUY_TAG.TOWER_AI) {
+            this.controller = new AITowerController(this);
+        } else if (this.tag === GUY_TAG.NEURAL_AI) {
+            this.controller = new AINeuralController(this);
         } else {
             this.controller = null;
         }
@@ -334,7 +337,7 @@ export class Guy {
 
     update() {
         if (this.controller != null) {
-            this.controller.update(this);
+            this.controller.update();
         }
         if (this.health <= 0.0) {
             this.destroy();

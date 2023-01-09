@@ -1,17 +1,19 @@
 import { GUY_TAG } from "./constants.js";
 
 export class AITowerController {
-    constructor() {}
+    constructor(guy) {
+        this.guy = guy;
+    }
 
-    update(guy) {
-        let observations = guy.observe_world();
+    update() {
+        let observations = this.guy.observe_world();
         let mid = Math.floor(observations.length / 2);
         for (let i = 0; i < observations.length; ++i) {
             let observation = observations[i];
             let target = observation.target;
             if (target.tag === GUY_TAG.PLAYER) {
-                guy.look_at(observation.position);
-                guy.shoot();
+                this.guy.look_at(observation.position);
+                this.guy.shoot();
             }
         }
     }

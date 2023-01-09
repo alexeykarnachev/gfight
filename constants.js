@@ -9,9 +9,12 @@ export const STEP_DIRECTION = {
     BACK_LEFT: 0.75 * Math.PI,
 };
 
+export const STEP_DIRECTION_NAMES = Object.keys(STEP_DIRECTION);
+
 export const GUY_TAG = {
-    PLAYER: 0,
-    DUMMY_AI: 1,
+    PLAYER: 1,
+    TOWER_AI: 2,
+    NEURAL_AI: 3,
 };
 
 export let GUY_COLORS = {};
@@ -20,8 +23,9 @@ GUY_COLORS[GUY_TAG.PLAYER] = {
     health_bar: "green",
     view_rays: "orange",
 };
-GUY_COLORS[GUY_TAG.DUMMY_AI] = {
+GUY_COLORS[GUY_TAG.TOWER_AI] = {
     circle: "crimson",
     health_bar: "red",
     view_rays: "crimson",
 };
+GUY_COLORS[GUY_TAG.NEURAL_AI] = GUY_COLORS[GUY_TAG.TOWER_AI];
