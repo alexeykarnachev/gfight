@@ -15,6 +15,7 @@ export const WORLD = {
 
     dt: 0.0,
     time: 0.0,
+    last_timestamp: null,
 
     obstacles: [],
     guys: [],
@@ -25,7 +26,8 @@ export function reset_world() {
     WORLD.key_states = {};
     WORLD.mouse_states = {};
     WORLD.dt = 0.0;
-    WORLD.time = Date.now();
+    WORLD.time = 0.0;
+    WORLD.last_timestamp = null;
     WORLD.obstacles = [];
     WORLD.guys = [];
     WORLD.bullets = [];
@@ -56,17 +58,33 @@ function update_world_time(dt) {
         WORLD.dt = dt;
     } else {
         let now = Date.now();
-        if (WORLD.time != null) {
-            WORLD.dt = now - WORLD.time;
+        if (WORLD.last_timestamp != null) {
+            WORLD.dt = now - WORLD.last_timestamp;
+            WORLD.time += WORLD.dt;
         }
-        WORLD.time = now;
     }
+
+    WORLD.last_timestamp = Date.now();
 }
 
 export function update_world(dt) {
     update_world_time(dt);
-    WORLD.guys = WORLD.guys.filter((g) => g.update() != null);
-    WORLD.bullets = WORLD.bullets.filter((b) => b.update() != null);
+    let new_guys = [];
+    for (let guy of WORLD.guys) {
+        guy = guy.update();
+        if (guy != null) {
+            new_guys.push(guy);
+        }
+    }
+    let new_bullets = [];
+    for (let bullet of WORLD.bullets) {
+        bullet = bullet.update();
+        if (bullet != null) {
+            new_bullets.push(bullet);
+        }
+    }
+    WORLD.guys = new_guys;
+    WORLD.bullets = new_bullets;
 }
 
 export function draw_world() {

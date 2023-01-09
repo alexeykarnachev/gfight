@@ -5,6 +5,7 @@ import {
     STEP_DIRECTION_NAMES,
 } from "./constants.js";
 import { WORLD, reset_world } from "./world.js";
+import { argmax } from "./utils.js";
 
 export class AINeuralController {
     constructor(brain) {
@@ -89,7 +90,7 @@ function get_brain_dim(brain) {
 
 export function get_random_brain(guy) {
     let guy_dim = get_guy_dim(guy);
-    let hidden_dims = [10, 10];
+    let hidden_dims = [50, 30, 10];
     let brain = [];
     for (let i = 0; i < hidden_dims.length + 1; ++i) {
         let inp_dim = i > 0 ? hidden_dims[i - 1] : guy_dim[0];
@@ -127,10 +128,4 @@ function forward(x, brain) {
     }
 
     return out;
-}
-
-function argmax(arr) {
-    return arr.reduce((max_idx, curr_val, curr_idx, vals) => {
-        return curr_val > vals[max_idx] ? curr_idx : max_idx;
-    }, 0);
 }

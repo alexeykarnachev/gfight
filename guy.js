@@ -39,9 +39,9 @@ export class Guy {
 
         this.view_angle = 0.5 * Math.PI;
         this.view_dist = 20.0;
-        this.n_view_rays = 31;
+        this.n_view_rays = 21;
 
-        this.max_health = 500;
+        this.max_health = 1000;
         this.health = this.max_health;
         this.score = 0.0;
 
@@ -142,8 +142,8 @@ export class Guy {
 
     get_hit_by_bullet(bullet) {
         this.health -= bullet.damage;
-        this.score -= 10.0;
-        bullet.owner.score += 10.0;
+        this.score -= 200.0;
+        bullet.owner.score += 200.0;
     }
 
     observe_world() {
@@ -192,9 +192,15 @@ export class Guy {
     }
 
     destroy() {
-        this.score -= 1000.0;
         if (this.is_respawnable) {
-            return this;
+            let guy = new Guy(
+                this.tag,
+                this.spawn_position,
+                this.is_respawnable,
+                this.controller
+            );
+            guy.score = this.score - 1000.0;
+            return guy;
         }
         return null;
     }
@@ -204,6 +210,7 @@ export class Guy {
             Math.cos(this.orientation + direction),
             -Math.sin(this.orientation + direction),
         ];
+        let initial_position = this.position;
         let start_position = this.position;
         let total_step_length = (this.move_speed * WORLD.dt) / 1000.0;
         let max_step_length = total_step_length;
@@ -286,11 +293,8 @@ export class Guy {
         }
 
         this.position = add(start_position, best_step);
-        if (
-            (total_step_length - best_step_length) / total_step_length >
-            0.9
-        ) {
-            this.score -= 1.0;
+        if (best_step_length / step_length < 0.5) {
+            this.score -= 10.0;
         }
     }
 
@@ -304,6 +308,7 @@ export class Guy {
         let view_direction = this.get_view_direction();
         let velocity = scale(view_direction, this.bullet_speed);
         let start_position = this.position;
+        this.score -= 10.0;
         spawn_bullet(
             new Bullet(start_position, velocity, this.bullet_damage, this)
         );
