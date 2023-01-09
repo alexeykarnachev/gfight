@@ -15,7 +15,7 @@ import {
     AINeuralController,
     get_random_brain,
 } from "./ai_neural_controller.js";
-import { argmax, sleep } from "./utils.js";
+import { argmax, sleep, shuffle } from "./utils.js";
 
 let OBSTACLES = [
     new Rectangle([0, 0], 40, 1),
@@ -33,12 +33,12 @@ function spawn_obstacles() {
 
 async function train() {
     let n_generations = 100;
-    let generation_size = 500;
-    let elite_size = 50;
+    let generation_size = 200;
+    let elite_size = 20;
     let mutation_rate = 0.1;
-    let simulation_time = 30_000; // Milliseconds
+    let simulation_time = 60_000; // Milliseconds
     let simulation_dt = 17; // Milliseconds
-    let animation_time = 30_000;
+    let animation_time = 40_000;
 
     let generation = [];
     for (let i = 0; i < generation_size; ++i) {
@@ -52,7 +52,7 @@ async function train() {
         generation.push(guy);
     }
 
-    let best_score = 0.0;
+    let best_score = null;
     for (let i_gen = 0; i_gen < n_generations; ++i_gen) {
         for (let i_step = 0; i_step + 1 < generation_size; i_step += 2) {
             let guy0 = generation[i_step];
@@ -70,7 +70,11 @@ async function train() {
             }
 
             let step_score = Math.max(guy0.score, guy1.score);
-            best_score = Math.max(best_score, step_score);
+            if (best_score == null) {
+                best_score = step_score;
+            } else {
+                best_score = Math.max(best_score, step_score);
+            }
             console.log(
                 `Generation: ${i_gen + 1}/${n_generations}, Step: ${
                     i_step + 2
@@ -92,19 +96,18 @@ async function draw_generation(generation, animation_time) {
     if (WORLD.canvas == null) {
         create_world_canvas();
     }
-    let scores = generation.map((g) => g.score);
-    let best_guy = generation[argmax(scores)];
+    generation.sort(guys_comparator);
     let guy0 = new Guy(
         GUY_TAG.NEURAL_AI,
         [3, 27],
         true,
-        best_guy.controller
+        generation[0].controller
     );
     let guy1 = new Guy(
         GUY_TAG.NEURAL_AI,
         [37, 3],
         true,
-        best_guy.controller
+        generation[1].controller
     );
 
     reset_world();
@@ -121,7 +124,6 @@ async function draw_generation(generation, animation_time) {
     }
 
     requestAnimationFrame(draw_step);
-    console.log(`Drawing generation with score: ${best_guy.score}`);
     await sleep(animation_time + 1000);
 }
 
@@ -157,6 +159,7 @@ function create_new_generation(generation, elite_size, mutation_rate) {
         new_generation.push(guy);
     }
 
+    new_generation = shuffle(new_generation);
     return new_generation;
 }
 

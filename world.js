@@ -89,9 +89,9 @@ export function update_world(dt) {
 
 export function draw_world() {
     WORLD.context.clearRect(0, 0, WORLD.canvas.width, WORLD.canvas.height);
-    WORLD.bullets.map((b) => b.draw());
-    WORLD.guys.map((g) => g.draw());
     WORLD.obstacles.map((o) => o.draw("gray"));
+    WORLD.guys.map((g) => g.draw());
+    WORLD.bullets.map((b) => b.draw());
 }
 
 export function create_world_canvas() {

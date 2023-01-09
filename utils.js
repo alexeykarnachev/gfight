@@ -7,3 +7,7 @@ export function argmax(arr) {
 export function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+export function shuffle(arr) {
+    return arr.sort(() => Math.random() - 0.5);
+}

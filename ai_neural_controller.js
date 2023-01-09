@@ -90,7 +90,7 @@ function get_brain_dim(brain) {
 
 export function get_random_brain(guy) {
     let guy_dim = get_guy_dim(guy);
-    let hidden_dims = [50, 30, 10];
+    let hidden_dims = [50, 40, 30, 20];
     let brain = [];
     for (let i = 0; i < hidden_dims.length + 1; ++i) {
         let inp_dim = i > 0 ? hidden_dims[i - 1] : guy_dim[0];

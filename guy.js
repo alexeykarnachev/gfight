@@ -20,7 +20,7 @@ import {
 import { collide_object_with_world, Collision } from "./collision.js";
 import { WORLD, spawn_bullet, get_world_size_in_meters } from "./world.js";
 import { Bullet } from "./bullet.js";
-import { GUY_TAG, GUY_COLORS } from "./constants.js";
+import { GUY_TAG, GUY_COLORS, SCORES } from "./constants.js";
 import { ManualController } from "./manual_controller.js";
 import { AITowerController } from "./ai_tower_controller.js";
 import { AINeuralController } from "./ai_neural_controller.js";
@@ -142,8 +142,8 @@ export class Guy {
 
     get_hit_by_bullet(bullet) {
         this.health -= bullet.damage;
-        this.score -= 200.0;
-        bullet.owner.score += 200.0;
+        this.score += SCORES.RECEIVE_DAMAGE;
+        bullet.owner.score += SCORES.DEAL_DAMAGE;
     }
 
     observe_world() {
@@ -188,6 +188,20 @@ export class Guy {
             observations.push(nearest_observation);
         }
 
+        // TODO: Treat not all guys as an enemy. Introduce friendly tags
+        // or so
+        let is_enemy_in_sight = false;
+        for (let observation of observations) {
+            if (observation.target instanceof Guy) {
+                is_enemy_in_sight = true;
+                break;
+            }
+        }
+
+        if (!is_enemy_in_sight) {
+            this.score += SCORES.ENEMY_OUT_OF_SIGHT;
+        }
+
         return observations;
     }
 
@@ -199,7 +213,7 @@ export class Guy {
                 this.is_respawnable,
                 this.controller
             );
-            guy.score = this.score - 1000.0;
+            guy.score = this.score + SCORES.DIE;
             return guy;
         }
         return null;
@@ -294,7 +308,7 @@ export class Guy {
 
         this.position = add(start_position, best_step);
         if (best_step_length / step_length < 0.5) {
-            this.score -= 10.0;
+            this.score += SCORES.HIT_OBSTACLE;
         }
     }
 
@@ -308,7 +322,7 @@ export class Guy {
         let view_direction = this.get_view_direction();
         let velocity = scale(view_direction, this.bullet_speed);
         let start_position = this.position;
-        this.score -= 10.0;
+        this.score += SCORES.SHOOT;
         spawn_bullet(
             new Bullet(start_position, velocity, this.bullet_damage, this)
         );
