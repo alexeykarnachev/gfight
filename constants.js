@@ -11,11 +11,11 @@ export const STEP_DIRECTION = {
 
 export const SCORES = {
     DEAL_DAMAGE: 200.0,
-    RECEIVE_DAMAGE: -200.0,
-    DIE: -1000.0,
-    HIT_OBSTACLE: -10.0,
-    SHOOT: -10.0,
-    ENEMY_OUT_OF_SIGHT: -1.0,
+    RECEIVE_DAMAGE: -100.0,
+    DIE: -5000.0,
+    SHOOT: -20.0,
+    ENEMY_OUT_OF_SIGHT: -2.0,
+    SIMULATION_STEP: -1.0,
 };
 
 export const STEP_DIRECTION_NAMES = Object.keys(STEP_DIRECTION);

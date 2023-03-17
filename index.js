@@ -10,7 +10,7 @@ import {
     reset_world,
 } from "./world.js";
 import { rotate } from "./geometry.js";
-import { GUY_TAG } from "./constants.js";
+import { GUY_TAG, SCORES } from "./constants.js";
 import {
     AINeuralController,
     get_random_brain,
@@ -31,17 +31,35 @@ function spawn_obstacles() {
     OBSTACLES.map((o) => spawn_obstacle(o));
 }
 
+let MUTATION_STRENGTH = 0.1;
+let N_GENERATIONS = 100;
+let GENERATION_SIZE = 1000;
+let ELITE_SIZE = 100;
+let MUTATION_RATE = 0.1;
+let SIMULATION_TIME = 30_000; // Milliseconds
+let SIMULATION_DT = 17; // Milliseconds
+
+
+let ANIMATE = false;
+let ANIMATE_BUTTON = document.createElement("button");
+ANIMATE_BUTTON.style.cssFloat = 'right';
+ANIMATE_BUTTON.innerHTML = "SHOW BEST";
+document.body.appendChild(ANIMATE_BUTTON);
+ANIMATE_BUTTON.addEventListener("click", ()=>{
+    ANIMATE = !ANIMATE;
+    if (ANIMATE) {
+        ANIMATE_BUTTON.innerHTML = "STOP";
+    } else {
+        ANIMATE_BUTTON.innerHTML = "ANIMATE";
+    }
+});
+
+
 async function train() {
-    let n_generations = 100;
-    let generation_size = 200;
-    let elite_size = 20;
-    let mutation_rate = 0.1;
-    let simulation_time = 60_000; // Milliseconds
-    let simulation_dt = 17; // Milliseconds
-    let animation_time = 40_000;
+    GENERATION_SIZE = Math.floor(GENERATION_SIZE / 2) * 2;
 
     let generation = [];
-    for (let i = 0; i < generation_size; ++i) {
+    for (let i = 0; i < GENERATION_SIZE; ++i) {
         let position = i % 2 == 0 ? [3, 27] : [37, 3];
         let guy = new Guy(
             GUY_TAG.NEURAL_AI,
@@ -53,8 +71,9 @@ async function train() {
     }
 
     let best_score = null;
-    for (let i_gen = 0; i_gen < n_generations; ++i_gen) {
-        for (let i_step = 0; i_step + 1 < generation_size; i_step += 2) {
+    for (let i_gen = 0; i_gen < N_GENERATIONS; ++i_gen) {
+        let generation_score = null;
+        for (let i_step = 0; i_step < generation.length - 1; i_step += 2) {
             let guy0 = generation[i_step];
             let guy1 = generation[i_step + 1];
 
@@ -63,10 +82,12 @@ async function train() {
             spawn_guy(guy1);
             spawn_obstacles();
 
-            let time_remained = simulation_time;
+            let time_remained = SIMULATION_TIME;
             while (time_remained > 0) {
-                update_world(simulation_dt);
-                time_remained -= simulation_dt;
+                update_world(SIMULATION_DT);
+                time_remained -= SIMULATION_DT;
+                guy0.score += SCORES.SIMULATION_STEP;
+                guy1.score += SCORES.SIMULATION_STEP;
             }
 
             let step_score = Math.max(guy0.score, guy1.score);
@@ -75,28 +96,37 @@ async function train() {
             } else {
                 best_score = Math.max(best_score, step_score);
             }
-            console.log(
-                `Generation: ${i_gen + 1}/${n_generations}, Step: ${
-                    i_step + 2
-                }/${generation_size}, Step score: ${step_score}, Best score: ${best_score}`
-            );
-            await sleep(50.0);
+
+            if (generation_score == null) {
+                generation_score = step_score;
+            } else {
+                generation_score = Math.max(generation_score, step_score);
+            }
+
+            console.log(`Generation: ${i_gen + 1}/${N_GENERATIONS}, Step: ${ i_step + 2 }/${generation.length}, Step scores: [${guy0.score}, ${guy1.score}], Generation score: ${generation_score}, Best score: ${best_score}`);
+
+            if (ANIMATE) {
+                await draw_generation(generation.slice(0, i_step + 2));
+            }
+
+            await sleep(30.0);
         }
 
-        await draw_generation(generation, animation_time);
         generation = create_new_generation(
             generation,
-            elite_size,
-            mutation_rate
+            ELITE_SIZE,
+            MUTATION_RATE
         );
     }
 }
 
-async function draw_generation(generation, animation_time) {
+async function draw_generation(generation) {
     if (WORLD.canvas == null) {
         create_world_canvas();
     }
+
     generation.sort(guys_comparator);
+
     let guy0 = new Guy(
         GUY_TAG.NEURAL_AI,
         [3, 27],
@@ -110,6 +140,8 @@ async function draw_generation(generation, animation_time) {
         generation[1].controller
     );
 
+    console.log(`Animating guys with scores: ${generation[0].score} VS ${generation[1].score}`);
+
     reset_world();
     spawn_guy(guy0);
     spawn_guy(guy1);
@@ -118,20 +150,22 @@ async function draw_generation(generation, animation_time) {
     function draw_step() {
         update_world();
         draw_world();
-        if (WORLD.time < animation_time) {
+        if (ANIMATE) {
             requestAnimationFrame(draw_step);
         }
     }
 
     requestAnimationFrame(draw_step);
-    await sleep(animation_time + 1000);
+    while (ANIMATE) {
+        await sleep(500.0);
+    }
 }
 
-function create_new_generation(generation, elite_size, mutation_rate) {
+function create_new_generation(generation, ELITE_SIZE, MUTATION_RATE) {
     generation.sort(guys_comparator);
 
     let elite_brains = generation
-        .slice(0, elite_size)
+        .slice(0, ELITE_SIZE)
         .map((g) => g.controller.brain);
 
     let children_brains = [];
@@ -141,12 +175,13 @@ function create_new_generation(generation, elite_size, mutation_rate) {
         let child_brain = crossover(
             parent_brain0,
             parent_brain1,
-            mutation_rate
+            MUTATION_RATE
         );
         children_brains.push(child_brain);
     }
 
     let new_brains = [...elite_brains, ...children_brains];
+    new_brains = shuffle(new_brains);
     let new_generation = [];
     for (let i = 0; i < new_brains.length; ++i) {
         let position = i % 2 == 0 ? [3, 27] : [37, 3];
@@ -159,17 +194,16 @@ function create_new_generation(generation, elite_size, mutation_rate) {
         new_generation.push(guy);
     }
 
-    new_generation = shuffle(new_generation);
     return new_generation;
 }
 
-function crossover(brain0, brain1, mutation_rate) {
+function crossover(brain0, brain1, MUTATION_RATE) {
     let brain = brain0.map((a) => a.slice());
     for (let i = 0; i < brain0.length; ++i) {
         for (let j = 0; j < brain0[i].length; ++j) {
             let weight = Math.random() < 0.5 ? brain0[i][j] : brain1[i][j];
-            if (Math.random < mutation_rate) {
-                weight += (Math.random() * 2.0 - 1.0) * 0.1;
+            if (Math.random < MUTATION_RATE) {
+                weight += (Math.random() * 2.0 - 1.0) * MUTATION_STRENGTH;
             }
             brain[i][j] = weight;
         }

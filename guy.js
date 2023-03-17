@@ -37,9 +37,9 @@ export class Guy {
             scale(get_world_size_in_meters(), 0.5)
         );
 
-        this.view_angle = 0.5 * Math.PI;
+        this.view_angle = 0.3 * Math.PI;
         this.view_dist = 20.0;
-        this.n_view_rays = 21;
+        this.n_view_rays = 11;
 
         this.max_health = 1000;
         this.health = this.max_health;
@@ -307,9 +307,6 @@ export class Guy {
         }
 
         this.position = add(start_position, best_step);
-        if (best_step_length / step_length < 0.5) {
-            this.score += SCORES.HIT_OBSTACLE;
-        }
     }
 
     shoot() {
